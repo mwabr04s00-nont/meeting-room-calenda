@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจองห้องประชุม - กปน.สสน.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- LINE LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; box-sizing: border-box; }
+    body { background-color: #f4f6f9; margin: 0; padding: 16px; color: #333; }
+    .header-container { text-align: center; margin-bottom: 16px; }
+    .header-title { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; }
+    .header-subtitle { font-size: 15px; font-weight: 500; color: #64748b; margin-top: 4px; }
+    
+    /* กล่องแสดงโปรไฟล์ LINE */
+    .profile-box { 
+      display: none; 
+      flex-direction: column;
+      align-items: center; 
+      justify-content: center; 
+      gap: 4px; 
+      margin: 12px auto 0; 
+      background: #f0fdf4; 
+      padding: 8px 14px; 
+      border-radius: 14px; 
+      width: fit-content; 
+      border: 1px solid #bbf7d0; 
+    }
+    .profile-info { display: flex; align-items: center; gap: 8px; }
+    .profile-box img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    .profile-box .name { font-size: 13.5px; font-weight: 600; color: #166534; }
+    .profile-box .uid { font-size: 11px; color: #15803d; font-family: monospace; background: #dcfce7; padding: 2px 6px; border-radius: 6px; }
+
+    .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 16px; border: 1px solid #edf2f7; }
+    label { font-weight: 600; display: block; margin-bottom: 8px; font-size: 14px; color: #475569; }
+    select, input, textarea, button { font-family: 'Prompt', sans-serif; }
+    select, input, textarea { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; margin-bottom: 16px; font-size: 14px; background-color: #f8fafc; color: #1e293b; }
+    select:focus, input:focus, textarea:focus { outline: none; border-color: #06c755; background-color: #fff; box-shadow: 0 0 0 3px rgba(6,199,85,0.15); }
+    textarea { resize: vertical; height: 80px; }
+    
+    .date-display-box { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 10px 14px; margin-top: -8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13.5px; color: #065f46; font-weight: 500; }
+    
+    .tab-container { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 10px; text-align: center; background: none; border: none; font-weight: 600; color: #64748b; cursor: pointer; font-size: 13px; border-radius: 8px; transition: all 0.2s; }
+    .tab-btn.active { background: #ffffff; color: #06c755; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .view-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 8px; font-size: 12px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .view-table th, .view-table td { border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 10px 6px; text-align: center; }
+    .view-table th:last-child, .view-table td:last-child { border-right: none; }
+    .view-table tr:last-child td { border-bottom: none; }
+    .view-table th { background-color: #f8fafc; color: #334155; font-weight: 600; font-size: 13px; }
+    
+    .badge { display: inline-block; padding: 5px 10px; border-radius: 6px; font-weight: 600; font-size: 11px; cursor: default; }
+    .badge.available { background: #dcfce7; color: #166534; }
+    .badge.booked { background: #fee2e2; color: #991b1b; cursor: pointer; transition: 0.15s; }
+    .badge.booked:hover { transform: scale(1.03); opacity: 0.9; }
+
+    /* Calendar Grid */
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .cal-header button { background: #f1f5f9; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .cal-month-title { font-weight: 600; font-size: 15px; color: #1e293b; }
+    .cal-legend { display: flex; gap: 10px; justify-content: center; font-size: 11px; margin-bottom: 10px; color: #64748b; }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-r1 { background-color: #ef4444; }
+    .dot-r2 { background-color: #f59e0b; }
+    .dot-r3 { background-color: #3b82f6; }
+
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+    .cal-day-name { font-size: 12px; font-weight: 600; color: #64748b; padding: 6px 0; }
+    .cal-day-cell { min-height: 52px; padding: 6px 2px; font-size: 12px; border-radius: 8px; cursor: pointer; background: #f8fafc; border: 1px solid #edf2f7; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; transition: all 0.2s; }
+    .cal-day-cell:hover { background: #f1f5f9; }
+    .cal-day-cell.selected { border: 2px solid #06c755; background: #f0fdf4; font-weight: 700; color: #166534; }
+    .cal-day-cell.empty { background: transparent; border: none; cursor: default; }
+    .cal-dots-container { display: flex; gap: 3px; margin-top: 4px; justify-content: center; flex-wrap: wrap; }
+    .cal-room-pill { font-size: 9px; padding: 1px 3px; border-radius: 4px; color: #fff; font-weight: 600; }
+
+    .room-preview { text-align: center; margin-bottom: 16px; background: #f8fafc; padding: 8px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .room-preview img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; }
+    .room-desc { font-size: 13px; color: #475569; margin-top: 8px; font-weight: 500; }
+    
+    .btn-submit { width: 100%; background: linear-gradient(135deg, #06c755 0%, #059b43 100%); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(6,199,85,0.25); }
+    .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15,23,42,0.6); backdrop-filter: blur(6px); align-items: center; justify-content: center; }
+    .modal-content { background-color: #fff; border-radius: 20px; width: 90%; max-width: 380px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); animation: modalPop 0.25s ease-out; }
+    @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    
+    .modal-header { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 18px 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
+    .modal-close { font-size: 24px; font-weight: bold; cursor: pointer; color: #94a3b8; line-height: 1; }
+    .modal-close:hover { color: #fff; }
+    
+    .modal-body { padding: 20px; }
+    .detail-item { display: flex; align-items: flex-start; margin-bottom: 12px; font-size: 13.5px; }
+    .detail-item:last-child { margin-bottom: 0; }
+    .detail-label { width: 95px; color: #64748b; font-weight: 500; flex-shrink: 0; }
+    .detail-val { color: #1e293b; font-weight: 600; word-break: break-word; }
+    .modal-footer { padding: 12px 20px 18px; text-align: center; }
+    .btn-close-modal { width: 100%; padding: 10px; border: 1.5px solid #e2e8f0; background: #fff; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="header-container">
+    <h1 class="header-title">ระบบจองห้องประชุม</h1>
+    <div class="header-subtitle">สำนักงานประปาสาขานนทบุรี</div>
+    
+    <!-- แถบโปรไฟล์ LINE & UID -->
+    <div id="profileContainer" class="profile-box">
+      <div class="profile-info">
+        <img id="lineProfileImg" src="" alt="Profile">
+        <span id="lineProfileName" class="name">กำลังเชื่อมต่อ LINE...</span>
+      </div>
+      <div class="uid">UID: <span id="lineProfileUid">-</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="bookingDate">เลือกวันที่ต้องการตรวจสอบ</label>
+    <input type="date" id="bookingDate" onchange="onDateInputChange()">
+    
+    <div class="date-display-box">
+      <span>📅 วันที่เลือก:</span>
+      <strong id="thaiDateLabel">-</strong>
+    </div>
+
+    <div class="tab-container">
+      <button class="tab-btn active" onclick="switchTab('schedule', event)">Schedule</button>
+      <button class="tab-btn" onclick="switchTab('timeline', event)">Time Line</button>
+      <button class="tab-btn" onclick="switchTab('calendar', event)">Calendar</button>
+    </div>
+
+    <!-- 1. Schedule View -->
+    <div id="scheduleTab" class="tab-content active">
+      <table class="view-table">
+        <thead>
+          <tr>
+            <th>ห้องประชุม</th>
+            <th>เช้า<br>(8:30-12:00)</th>
+            <th>บ่าย<br>(13:00-16:30)</th>
+            <th>ตลอดวัน</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: left; font-weight: 600;">ห้องประชุม 1</td>
+            <td><div id="r1_morning"><span class="badge available">กำลังโหลด...</span></div></td>
+            <td><div id="r1_afternoon"><span class="badge available">กำลังโหลด...</span></div></td>
+            <td><div id="r1_fullday"><span class="badge available">กำลังโหลด...</span></div></td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-weight: 600;">ห้องประชุม 2</td>
+            <td><div id="r2_morning"><span class="badge available">กำลังโหลด...</span></div></td>
+            <td><div id="r2_afternoon"><span class="badge available">กำลังโหลด...</span></div></td>
+            <td><div id="r2_fullday"><span class="badge available">กำลังโหลด...</span></div></td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-weight: 600;">ห้องประชุม 3</td>
+            <td><div id="r3_morning"><span class="badge available">กำลังโหลด...</span></div></td>
+            <td><div id="r3_afternoon"><span class="badge available">กำลังโหลด...</span></div></td>
+            <td><div id="r3_fullday"><span class="badge available">กำลังโหลด...</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2. Time Line View -->
+    <div id="timelineTab" class="tab-content">
+      <table class="view-table">
+        <thead>
+          <tr>
+            <th>ช่วงเวลา</th>
+            <th>ห้องประชุม 1</th>
+            <th>ห้องประชุม 2</th>
+            <th>ห้องประชุม 3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>เช้า (8:30-12:00)</td>
+            <td><div id="t_r1_morning"><span class="badge available">-</span></div></td>
+            <td><div id="t_r2_morning"><span class="badge available">-</span></div></td>
+            <td><div id="t_r3_morning"><span class="badge available">-</span></div></td>
+          </tr>
+          <tr>
+            <td>บ่าย (13:00-16:30)</td>
+            <td><div id="t_r1_afternoon"><span class="badge available">-</span></div></td>
+            <td><div id="t_r2_afternoon"><span class="badge available">-</span></div></td>
+            <td><div id="t_r3_afternoon"><span class="badge available">-</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 3. Calendar View -->
+    <div id="calendarTab" class="tab-content">
+      <div class="cal-header">
+        <button onclick="changeMonth(-1)">&lt;</button>
+        <span id="calMonthTitle" class="cal-month-title"></span>
+        <button onclick="changeMonth(1)">&gt;</button>
+      </div>
+
+      <div class="cal-legend">
+        <div class="legend-item"><span class="legend-dot dot-r1"></span> ห้อง 1</div>
+        <div class="legend-item"><span class="legend-dot dot-r2"></span> ห้อง 2</div>
+        <div class="legend-item"><span class="legend-dot dot-r3"></span> ห้อง 3</div>
+      </div>
+
+      <div class="cal-grid">
+        <div class="cal-day-name">อา</div>
+        <div class="cal-day-name">จ</div>
+        <div class="cal-day-name">อ</div>
+        <div class="cal-day-name">พ</div>
+        <div class="cal-day-name">พฤ</div>
+        <div class="cal-day-name">ศ</div>
+        <div class="cal-day-name">ส</div>
+      </div>
+      <div class="cal-grid" id="calCells"></div>
+    </div>
+  </div>
+
+  <!-- ฟอร์มการจอง -->
+  <div class="card">
+    <label for="roomSelect">เลือกห้องที่ต้องการจอง</label>
+    <select id="roomSelect" onchange="onRoomChange()">
+      <option value="room1">ห้องประชุม 1</option>
+      <option value="room2">ห้องประชุม 2</option>
+      <option value="room3">ห้องประชุม 3</option>
+    </select>
+
+    <div class="room-preview">
+      <img id="roomImg" src="https://via.placeholder.com/800x450?text=Room+1" alt="รูปห้องประชุม">
+      <div id="roomDesc" class="room-desc">ชั้น 3 | รองรับ 40 คน | มีระบบโปรเจคเตอร์ ไมค์และวิดีโอคอนเฟอเรนซ์</div>
+    </div>
+
+    <label for="timeSlot">เลือกช่วงเวลาที่ต้องการจอง</label>
+    <select id="timeSlot">
+      <option value="morning" id="opt_morning">ช่วงเช้า (08:30 - 12:00)</option>
+      <option value="afternoon" id="opt_afternoon">ช่วงบ่าย (13:00 - 16:30)</option>
+      <option value="fullday" id="opt_fullday">ตลอดวัน (08:30 - 16:30)</option>
+    </select>
+
+    <label for="meetingTitle">หัวข้อการประชุม *</label>
+    <input type="text" id="meetingTitle" placeholder="ระบุหัวข้อการประชุม">
+
+    <label for="bookerName">ผู้จองและหน่วยงานผู้จอง *</label>
+    <input type="text" id="bookerName" placeholder="เช่น คุณสมชาย (ฝ่าย IT)">
+
+    <label for="internalPhone">เบอร์ภายใน *</label>
+    <input type="tel" id="internalPhone" placeholder="เช่น 1234">
+
+    <label for="meetingDetail">รายละเอียดเพิ่มเติม (ถ้ามี)</label>
+    <textarea id="meetingDetail" placeholder="เช่น ขออาหารว่าง หรืออุปกรณ์เสริม"></textarea>
+
+    <button id="btnSubmit" class="btn-submit" onclick="submitBooking()">ยืนยันการจอง</button>
+  </div>
+
+  <!-- Modal รายละเอียด -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalRoom">รายละเอียดการจอง</h3>
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="detail-item">
+          <div class="detail-label">ช่วงเวลา</div>
+          <div class="detail-val" id="modalSlot">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">หัวข้อ</div>
+          <div class="detail-val" id="modalTitle" style="color: #0284c7;">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">ผู้จอง</div>
+          <div class="detail-val" id="modalBooker">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">เบอร์ภายใน</div>
+          <div class="detail-val" id="modalPhone">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">รายละเอียด</div>
+          <div class="detail-val" id="modalDetail" style="font-weight: 400; color: #475569;">-</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-close-modal" onclick="closeModal()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // ตั้งค่า URL ของ Web App และ LIFF ID
+    // -------------------------------------------------------------
+    const GAS_API_URL = "วาง_WEB_APP_URL_จาก_APPS_SCRIPT_ที่นี่"; // เช่น https://script.google.com/macros/s/.../exec
+    const LIFF_ID = "2012271332-6nSif7Sl"; 
+
+    const roomData = {
+      room1: { img: "https://lh3.googleusercontent.com/d/1JqIMn-lRGm8SYRxgpIhjjVcKo5-PYPem", desc: "ชั้น 3 | รองรับ 40 คน | มีระบบโปรเจคเตอร์ ไมค์และวิดีโอคอนเฟอเรนซ์" },
+      room2: { img: "https://lh3.googleusercontent.com/d/141s4jlVO8cuo4r8NrTKavV0u7CB9D6_p", desc: "ชั้น 3 | รองรับ 20 คน | มีโทรทัศน์ขนาด 85 นิ้ว" },
+      room3: { img: "https://lh3.googleusercontent.com/d/1ZJ7z-f93g1HLic_sO6LWo620TYsMmSGE", desc: "ชั้น 3 | รองรับ 10 คน | เหมาะสำหรับทีมย่อย" }
+    };
+
+    let calCurrentDate = new Date();
+    let monthlyCache = {}; 
+    let currentScheduleData = null;
+    let currentUserId = "";
+
+    // ฟังก์ชันยิง API เชื่อมต่อกับ GAS แบบ fetch POST
+    async function callGasApi(action, payload = {}) {
+      const response = await fetch(GAS_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action, ...payload })
+      });
+      return await response.json();
+    }
+
+    function formatThaiDate(dateStr) {
+      if(!dateStr) return "-";
+      const p = dateStr.split('-');
+      const y = parseInt(p[0], 10) + 543;
+      const m = parseInt(p[1], 10) - 1;
+      const d = parseInt(p[2], 10);
+      const mNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+      return `${d} ${mNames[m]} ${y} (${String(d).padStart(2,'0')}/${String(m+1).padStart(2,'0')}/${y})`;
+    }
+
+    function initDate() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const todayStr = `${y}-${m}-${d}`;
+      document.getElementById('bookingDate').value = todayStr;
+      document.getElementById('thaiDateLabel').innerText = formatThaiDate(todayStr);
+    }
+
+    window.onload = function() {
+      initDate();
+      onRoomChange();
+      loadSchedule();
+      fetchMonthOverview();
+      initLiff();
+    };
+
+    // แก้ปัญหา LIFF UID ไม่แสดง: บังคับ Login หากยังไม่ได้ Auth
+    function initLiff() {
+      if (typeof liff === 'undefined') return;
+
+      liff.init({ liffId: LIFF_ID })
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+          }
+          
+          liff.getProfile().then(profile => {
+            currentUserId = profile.userId;
+            document.getElementById('lineProfileImg').src = profile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+            document.getElementById('lineProfileName').innerText = profile.displayName;
+            document.getElementById('lineProfileUid').innerText = profile.userId;
+            document.getElementById('profileContainer').style.display = 'flex';
+            
+            const bInput = document.getElementById('bookerName');
+            if (bInput && !bInput.value) {
+              bInput.value = profile.displayName;
+            }
+          }).catch(err => {
+            console.error("LIFF getProfile Error:", err);
+          });
+        })
+        .catch(err => {
+          console.error("LIFF Init Error:", err);
+        });
+    }
+
+    function switchTab(tabName, event) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      if(tabName === 'schedule') document.getElementById('scheduleTab').classList.add('active');
+      else if(tabName === 'timeline') document.getElementById('timelineTab').classList.add('active');
+      else if(tabName === 'calendar') {
+        document.getElementById('calendarTab').classList.add('active');
+        fetchMonthOverview();
+      }
+      
+      event.currentTarget.classList.add('active');
+    }
+
+    function onDateInputChange() {
+      const dateVal = document.getElementById('bookingDate').value;
+      document.getElementById('thaiDateLabel').innerText = formatThaiDate(dateVal);
+      const selected = new Date(dateVal);
+      if(!isNaN(selected)) {
+        calCurrentDate = selected;
+        renderCalendar();
+      }
+      loadSchedule();
+    }
+
+    async function fetchMonthOverview() {
+      const year = calCurrentDate.getFullYear();
+      const month = calCurrentDate.getMonth();
+
+      try {
+        const res = await callGasApi('getMonthOverview', { year, month });
+        if(res.status === "success") {
+          monthlyCache = res.data;
+          renderCalendar();
+        }
+      } catch (err) {
+        console.error("เกิดข้อผิดพลาดในการโหลดปฏิทินเดือน:", err);
+      }
+    }
+
+    function renderCalendar() {
+      const year = calCurrentDate.getFullYear();
+      const month = calCurrentDate.getMonth();
+      const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+      
+      document.getElementById('calMonthTitle').innerText = `${monthNames[month]} ${year + 543}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const calCells = document.getElementById('calCells');
+      calCells.innerHTML = '';
+
+      const currentSelectedDate = document.getElementById('bookingDate').value;
+
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'cal-day-cell empty';
+        calCells.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-day-cell';
+
+        const dayNum = document.createElement('span');
+        dayNum.innerText = day;
+        cell.appendChild(dayNum);
+
+        const mStr = String(month + 1).padStart(2, '0');
+        const dStr = String(day).padStart(2, '0');
+        const thisDateStr = `${year}-${mStr}-${dStr}`;
+
+        if (thisDateStr === currentSelectedDate) {
+          cell.classList.add('selected');
+        }
+
+        const dayBookings = monthlyCache[thisDateStr];
+        if (dayBookings) {
+          const dotsBox = document.createElement('div');
+          dotsBox.className = 'cal-dots-container';
+
+          if (dayBookings['room1']) {
+            const p1 = document.createElement('span');
+            p1.className = 'cal-room-pill dot-r1';
+            p1.innerText = 'ร1';
+            dotsBox.appendChild(p1);
+          }
+          if (dayBookings['room2']) {
+            const p2 = document.createElement('span');
+            p2.className = 'cal-room-pill dot-r2';
+            p2.innerText = 'ร2';
+            dotsBox.appendChild(p2);
+          }
+          if (dayBookings['room3']) {
+            const p3 = document.createElement('span');
+            p3.className = 'cal-room-pill dot-r3';
+            p3.innerText = 'ร3';
+            dotsBox.appendChild(p3);
+          }
+          cell.appendChild(dotsBox);
+        }
+
+        cell.onclick = function() {
+          document.getElementById('bookingDate').value = thisDateStr;
+          document.getElementById('thaiDateLabel').innerText = formatThaiDate(thisDateStr);
+          renderCalendar();
+          loadSchedule();
+        };
+
+        calCells.appendChild(cell);
+      }
+    }
+
+    function changeMonth(direction) {
+      calCurrentDate.setMonth(calCurrentDate.getMonth() + direction);
+      renderCalendar();
+      fetchMonthOverview();
+    }
+
+    function onRoomChange() {
+      const selected = document.getElementById('roomSelect').value;
+      document.getElementById('roomImg').src = roomData[selected].img;
+      document.getElementById('roomDesc').innerText = roomData[selected].desc;
+      updateAvailableTimeSlots();
+    }
+
+    async function loadSchedule() {
+      const date = document.getElementById('bookingDate').value;
+      if(!date) return;
+
+      ['room1', 'room2', 'room3'].forEach((r, idx) => {
+        ['morning', 'afternoon', 'fullday'].forEach(s => {
+          const el = document.getElementById(`r${idx+1}_${s}`);
+          if(el) el.innerHTML = `<span class="badge available" style="opacity:0.6;">...</span>`;
+        });
+      });
+
+      try {
+        const result = await callGasApi('getScheduleData', { date });
+        if(result.status === "success") {
+          currentScheduleData = result.data;
+          updateTableUI(result.data);
+          updateAvailableTimeSlots();
+        } else {
+          alert("ดึงข้อมูลไม่สำเร็จ: " + result.message);
+        }
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ Server: " + err);
+      }
+    }
+
+    function updateAvailableTimeSlots() {
+      if(!currentScheduleData) return;
+      const selectedRoom = document.getElementById('roomSelect').value;
+      const roomSchedule = currentScheduleData[selectedRoom];
+
+      const optMorning = document.getElementById('opt_morning');
+      const optAfternoon = document.getElementById('opt_afternoon');
+      const optFullday = document.getElementById('opt_fullday');
+      const timeSelect = document.getElementById('timeSlot');
+
+      const isMorningBooked = (roomSchedule.morning.status === 'booked');
+      const isAfternoonBooked = (roomSchedule.afternoon.status === 'booked');
+
+      if(isMorningBooked) {
+        optMorning.disabled = true;
+        optMorning.innerText = "ช่วงเช้า (08:30 - 12:00) [ไม่ว่าง]";
+      } else {
+        optMorning.disabled = false;
+        optMorning.innerText = "ช่วงเช้า (08:30 - 12:00)";
+      }
+
+      if(isAfternoonBooked) {
+        optAfternoon.disabled = true;
+        optAfternoon.innerText = "ช่วงบ่าย (13:00 - 16:30) [ไม่ว่าง]";
+      } else {
+        optAfternoon.disabled = false;
+        optAfternoon.innerText = "ช่วงบ่าย (13:00 - 16:30)";
+      }
+
+      if(isMorningBooked || isAfternoonBooked) {
+        optFullday.disabled = true;
+        optFullday.innerText = "ตลอดวัน (08:30 - 16:30) [ไม่ว่าง]";
+      } else {
+        optFullday.disabled = false;
+        optFullday.innerText = "ตลอดวัน (08:30 - 16:30)";
+      }
+
+      if(timeSelect.selectedOptions[0] && timeSelect.selectedOptions[0].disabled) {
+        if(!optMorning.disabled) timeSelect.value = "morning";
+        else if(!optAfternoon.disabled) timeSelect.value = "afternoon";
+        else if(!optFullday.disabled) timeSelect.value = "fullday";
+      }
+    }
+
+    function updateTableUI(data) {
+      const rooms = ['room1', 'room2', 'room3'];
+      const roomNames = { room1: 'ห้องประชุม 1', room2: 'ห้องประชุม 2', room3: 'ห้องประชุม 3' };
+      const slotNames = { morning: 'ช่วงเช้า (08:30-12:00)', afternoon: 'ช่วงบ่าย (13:00-16:30)', fullday: 'ตลอดวัน (08:30-16:30)' };
+
+      rooms.forEach((rId, idx) => {
+        const rIndex = idx + 1;
+        ['morning', 'afternoon', 'fullday'].forEach(slot => {
+          const slotInfo = data[rId][slot];
+          const el = document.getElementById(`r${rIndex}_${slot}`);
+          const tEl = document.getElementById(`t_r${rIndex}_${slot}`);
+
+          let htmlContent = '';
+          if (slotInfo.status === 'booked') {
+            let booker = '-', phone = '-', detail = '-';
+            if(slotInfo.description) {
+              slotInfo.description.split('\n').forEach(line => {
+                if(line.startsWith('ผู้จอง:')) booker = line.replace('ผู้จอง:', '').trim();
+                if(line.startsWith('เบอร์ภายใน:')) phone = line.replace('เบอร์ภายใน:', '').trim();
+                if(line.startsWith('รายละเอียดเพิ่มเติม:')) detail = line.replace('รายละเอียดเพิ่มเติม:', '').trim();
+              });
+            }
+            htmlContent = `<span class="badge booked" onclick="showBookingDetail('${roomNames[rId]}', '${slotNames[slot]}', '${slotInfo.title}', '${booker}', '${phone}', '${detail}')">ไม่ว่าง</span>`;
+          } else {
+            htmlContent = `<span class="badge available">ว่าง</span>`;
+          }
+
+          if(el) el.innerHTML = htmlContent;
+          if(tEl) tEl.innerHTML = htmlContent;
+        });
+      });
+    }
+
+    function showBookingDetail(room, slot, title, booker, phone, detail) {
+      document.getElementById('modalRoom').innerText = room;
+      document.getElementById('modalSlot').innerText = slot;
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalBooker').innerText = booker;
+      document.getElementById('modalPhone').innerText = phone;
+      document.getElementById('modalDetail').innerText = detail;
+      document.getElementById('detailModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('detailModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('detailModal');
+      if (event.target == modal) { modal.style.display = 'none'; }
+    }
+
+    function sendBookingFlex(roomName, dateText, slotText, title, booker, phone) {
+      if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
+        console.log("LIFF ไม่ได้ล็อกอิน");
+        return;
+      }
+
+      const flexObj = {
+        type: "flex",
+        altText: `📅 ยืนยันการจอง: ${title}`,
+        contents: {
+          type: "bubble",
+          hero: {
+            type: "image",
+            url: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
+            size: "full",
+            aspectRatio: "20:9",
+            aspectMode: "cover"
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              { type: "text", text: "จองห้องประชุมสำเร็จ", weight: "bold", size: "xl", color: "#06c755" },
+              { type: "text", text: title, weight: "bold", size: "md", margin: "md", wrap: true },
+              { type: "separator", margin: "lg" },
+              {
+                type: "box",
+                layout: "vertical",
+                margin: "lg",
+                spacing: "sm",
+                contents: [
+                  {
+                    type: "box", layout: "baseline",
+                    contents: [
+                      { type: "text", text: "ห้อง", color: "#64748b", size: "sm", flex: 2 },
+                      { type: "text", text: roomName, wrap: true, color: "#1e293b", size: "sm", flex: 6, weight: "bold" }
+                    ]
+                  },
+                  {
+                    type: "box", layout: "baseline",
+                    contents: [
+                      { type: "text", text: "วันที่", color: "#64748b", size: "sm", flex: 2 },
+                      { type: "text", text: dateText, wrap: true, color: "#1e293b", size: "sm", flex: 6 }
+                    ]
+                  },
+                  {
+                    type: "box", layout: "baseline",
+                    contents: [
+                      { type: "text", text: "เวลา", color: "#64748b", size: "sm", flex: 2 },
+                      { type: "text", text: slotText, wrap: true, color: "#1e293b", size: "sm", flex: 6 }
+                    ]
+                  },
+                  {
+                    type: "box", layout: "baseline",
+                    contents: [
+                      { type: "text", text: "ผู้จอง", color: "#64748b", size: "sm", flex: 2 },
+                      { type: "text", text: `${booker} (${phone})`, wrap: true, color: "#1e293b", size: "sm", flex: 6 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      };
+
+      liff.sendMessages([flexObj])
+        .then(() => console.log("ส่งข้อความสำเร็จ"))
+        .catch(err => {
+          console.warn("ไม่สามารถส่ง Flex Message: " + err.message);
+        });
+    }
+
+    async function submitBooking() {
+      const room = document.getElementById('roomSelect').value;
+      const date = document.getElementById('bookingDate').value;
+      const slot = document.getElementById('timeSlot').value;
+      const title = document.getElementById('meetingTitle').value.trim();
+      const booker = document.getElementById('bookerName').value.trim();
+      const phone = document.getElementById('internalPhone').value.trim();
+      const detail = document.getElementById('meetingDetail').value.trim();
+
+      const opt = document.getElementById(`opt_${slot}`);
+      if(opt && opt.disabled) {
+        alert('ช่วงเวลาดังกล่าวไม่ว่าง กรุณาเลือกช่วงเวลาอื่น');
+        return;
+      }
+
+      if(!title || !booker || !phone) {
+        alert('กรุณากรอกหัวข้อ ผู้จอง และเบอร์ภายในให้ครบถ้วน');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerText = "กำลังบันทึกข้อมูล...";
+
+      const payload = { 
+        room, 
+        date, 
+        slot, 
+        title, 
+        booker, 
+        phone, 
+        detail,
+        userId: currentUserId 
+      };
+
+      try {
+        const res = await callGasApi('saveBooking', { data: payload });
+        btn.disabled = false;
+        btn.innerText = "ยืนยันการจอง";
+        
+        alert(res.message);
+        if(res.status === "success") {
+          const roomNames = { room1: 'ห้องประชุม 1', room2: 'ห้องประชุม 2', room3: 'ห้องประชุม 3' };
+          const slotLabels = {
+            morning: 'ช่วงเช้า (08:30 - 12:00)',
+            afternoon: 'ช่วงบ่าย (13:00 - 16:30)',
+            fullday: 'ตลอดวัน (08:30 - 16:30)'
+          };
+          const dateText = document.getElementById('thaiDateLabel').innerText;
+
+          sendBookingFlex(roomNames[room], dateText, slotLabels[slot], title, booker, phone);
+
+          loadSchedule();
+          fetchMonthOverview();
+          document.getElementById('meetingTitle').value = '';
+          document.getElementById('internalPhone').value = '';
+          document.getElementById('meetingDetail').value = '';
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "ยืนยันการจอง";
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + err);
+      }
+    }
+  </script>
+</body>
+</html>
