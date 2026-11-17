@@ -13,10 +13,9 @@
   
   <style>
     body { 
-      /* เพิ่มภาพพื้นหลังห้องประชุม พร้อมซ้อนทับด้วยสีน้ำเงินอมเทาโปร่งแสงให้ดูพรีเมียม */
-      background: linear-gradient(rgba(224, 231, 255, 0.75), rgba(241, 245, 249, 0.85)), 
-                  url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=2369&auto=format&fit=crop') no-repeat center center fixed;
-      background-size: cover;
+      /* ไล่เฉดสีพื้นหลังหน้าเว็บจาก คราม ไป ม่วง สวยงามและดูพรีเมียม */
+      background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
+      background-attachment: fixed;
       font-family: 'Prompt', sans-serif;
       padding-top: 30px; 
       padding-bottom: 30px; 
@@ -24,14 +23,12 @@
     }
     
     .card-form { 
-      /* ใช้เทคนิค Glassmorphism (กระจกฝ้า) */
-      background: rgba(255, 255, 255, 0.85); 
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      border-top: 5px solid #4f46e5; 
+      /* พื้นหลังฟอร์มไล่เฉดสีฟ้าพาสเทล เพื่อให้มีสีสันตัดกับปฏิทินอย่างชัดเจน */
+      background: linear-gradient(135deg, #eef2ff 0%, #c7d2fe 100%); 
+      border: 1px solid #a5b4fc;
+      border-top: 6px solid #4338ca; 
       border-radius: 16px; 
-      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1); 
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); 
     }
     .required { color: #e11d48; margin-left: 3px; }
     
@@ -104,17 +101,15 @@
       color: #334155;
     }
     
-    /* กรอบปฏิทิน (เพิ่ม Glassmorphism ให้เข้ากับฟอร์ม) */
+    /* กรอบปฏิทิน (ปรับเป็นสีขาวทึบ เพื่อให้คอนทราสต์กับฟอร์มและพื้นหลัง) */
     .calendar-container { 
-      background: rgba(255, 255, 255, 0.85); 
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      background: #ffffff; 
+      border: none;
       border-radius: 16px; 
       overflow: hidden; 
       height: 100%; 
       min-height: 620px; 
-      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
@@ -128,7 +123,8 @@
       <div class="calendar-container flex-grow-1">
         <iframe id="calendarSheet" src="https://calendar.google.com/calendar/embed?src=a24308c5d9b036774f1880fe4f426a9700b018c9ae29f0467fa85c07bca31fb2%40group.calendar.google.com&ctz=Asia%2FBangkok" style="border: 0; width:100%; height:100%; min-height:620px;" frameborder="0" scrolling="no"></iframe>
       </div>
-      <p class="text-center small mt-3 mb-0" style="color: #334155; background: rgba(255, 255, 255, 0.6); padding: 6px 12px; border-radius: 8px; display: inline-block; align-self: center; backdrop-filter: blur(4px);">
+      <!-- ปรับสีตัวอักษรแจ้งเตือนให้สว่างขึ้น เพื่อให้อ่านง่ายบนพื้นหลังสีเข้ม -->
+      <p class="text-center small mt-3 mb-0" style="color: #f8fafc; background: rgba(0, 0, 0, 0.25); padding: 8px 16px; border-radius: 8px; display: inline-block; align-self: center; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px);">
         *** หลังจากส่งแบบฟอร์มแล้ว หากปฏิทินยังไม่แสดงรายการจอง ให้รีเฟรชหน้าจอ 1-2 ครั้ง
       </p>
     </div>
