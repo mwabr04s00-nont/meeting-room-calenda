@@ -13,7 +13,7 @@
   
   <style>
     body { 
-      background: linear-gradient(135deg, #f0f4f8 0%, #e8eaf6 100%); 
+      background: #f8fafc; /* พื้นหลังสีเทาอมฟ้าสว่าง ดูสะอาดตาและพรีเมียม */
       font-family: 'Prompt', sans-serif;
       padding-top: 30px; 
       padding-bottom: 30px; 
@@ -21,150 +21,92 @@
     }
     
     .card-form { 
-      border: none;
-      border-top: 8px solid #ff6b6b; /* เส้นขอบบนสีแดงสดใส */
-      border-radius: 20px; 
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08); 
+      border: 1px solid #e2e8f0;
+      border-top: 5px solid #4f46e5; /* เส้นขอบบนสีคราม Indigo พรีเมียม */
+      border-radius: 16px; 
+      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08); 
       background-color: white;
     }
-    .required { color: #dc3545; margin-left: 3px; }
+    .required { color: #e11d48; margin-left: 3px; }
     
     .form-label {
-      color: #333333;
+      color: #334155;
       font-weight: 500;
       font-size: 0.95rem;
       margin-bottom: 6px;
     }
     
-    /* โครงสร้างพื้นฐานของกล่องกรอกข้อมูล */
+    /* โครงสร้างพื้นฐานของกล่องกรอกข้อมูล (เปลี่ยนให้เป็นฟอร์มมาตรฐานเดียวกันหมด) */
     .form-control, .form-select {
-      border-radius: 12px;
-      padding: 11px 15px;
+      border-radius: 10px;
+      padding: 10px 14px;
       font-weight: 400;
-      transition: all 0.25s ease-in-out;
-      border: 2px solid transparent;
+      transition: all 0.2s ease-in-out;
+      border: 1px solid #cbd5e1;
+      background-color: #fcfcfc;
+      color: #1e293b;
     }
 
-    /* 1. ช่องหัวข้อการประชุม - สีฟ้าสดใส (Sky Blue) */
-    #title {
-      background-color: #e3f2fd;
-      border-color: #90caf9;
-      color: #0d47a1;
-    }
-    #title:focus {
+    /* สไตล์เวลากดพิมพ์ (Focus) ใช้สีครามเป็น Accent หลัก */
+    .form-control:focus, .form-select:focus {
       background-color: #fff;
-      border-color: #1e88e5;
-      box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.2);
+      border-color: #6366f1; 
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+      outline: none;
     }
 
-    /* 2. ช่องวันที่ต้องการ - สีชมพูอมส้มสุดชิค (Peach Pink) */
-    #date {
-      background-color: #fff0f6;
-      border-color: #ffc9c9;
-      color: #c92a2a;
-    }
-    #date:focus {
-      background-color: #fff;
-      border-color: #ff6b6b;
-      box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2);
-    }
-
-    /* 3. ช่องช่วงเวลา - สีเหลืองกล้วยหอมสุดเฟรนด์ลี่ (Banana Yellow) */
-    #timeType {
-      background-color: #fff9db;
-      border-color: #ffe066;
-      color: #e67e22;
-    }
-    #timeType:focus {
-      background-color: #fff;
-      border-color: #fab005;
-      box-shadow: 0 0 0 4px rgba(250, 176, 5, 0.2);
-    }
-    #timeType:disabled {
-      background-color: #f1f3f5;
-      border-color: #dee2e6;
-      color: #868e96;
-    }
-
-    /* 4. ช่องชื่อผู้จอง - สีเขียวมิ้นท์สดชื่น (Mint Green) */
-    #requester {
-      background-color: #e6fcf5;
-      border-color: #96f2d7;
-      color: #087f5b;
-    }
-    #requester:focus {
-      background-color: #fff;
-      border-color: #20c997;
-      box-shadow: 0 0 0 4px rgba(32, 201, 151, 0.2);
-    }
-
-    /* 5. ช่องเบอร์โทรภายใน - สีม่วงลาเวนเดอร์ (Lavender Purple) */
-    #phone {
-      background-color: #f3f0ff;
-      border-color: #d0bfff;
-      color: #5f3dc4;
-    }
-    #phone:focus {
-      background-color: #fff;
-      border-color: #845ef7;
-      box-shadow: 0 0 0 4px rgba(132, 94, 247, 0.2);
-    }
-
-    /* 6. ช่องข้อมูลเพิ่มเติม - สีส้มชานมสว่าง (Thai Tea Orange) */
-    #note {
-      background-color: #fff4e6;
-      border-color: #ffd8a8;
-      color: #d9480f;
-    }
-    #note:focus {
-      background-color: #fff;
-      border-color: #fd7e14;
-      box-shadow: 0 0 0 4px rgba(253, 126, 20, 0.2);
+    /* สไตล์ตอนที่ช่องโดนปิดล็อก (ยังไม่เลือกวันที่) */
+    .form-select:disabled {
+      background-color: #f1f5f9;
+      color: #94a3b8;
+      border-color: #e2e8f0;
     }
     
-    /* ปุ่มส่งข้อมูลแอนิเมชันไล่สีรุ้ง/ส้มแดงสดใส */
+    /* ปุ่มส่งข้อมูล ดีไซน์เฉดสีครามแบบพรีเมียม */
     .btn-submit { 
-      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%); 
+      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); 
       color: white; 
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
     .btn-submit:hover { 
-      background: linear-gradient(135deg, #fa5252 0%, #ff6b6b 100%); 
+      background: linear-gradient(135deg, #4338ca 0%, #312e81 100%); 
       color: white; 
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 107, 107, 0.45);
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
     }
     .btn-submit:disabled { 
       background: #e2e8f0; 
-      color: #a0aec0; 
+      color: #94a3b8; 
       box-shadow: none;
       transform: none;
     }
     
+    /* ปุ่มล้างข้อมูลแบบ Clean */
     .btn-clear {
-      border: 2px solid #ced4da;
-      border-radius: 12px;
-      color: #495057;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      color: #475569;
       transition: all 0.2s;
-      background-color: white;
+      background-color: #f8fafc;
     }
     .btn-clear:hover {
-      background-color: #f8f9fa;
-      border-color: #adb5bd;
+      background-color: #f1f5f9;
+      border-color: #94a3b8;
+      color: #334155;
     }
     
     /* กรอบปฏิทิน */
     .calendar-container { 
-      border: none; 
-      border-radius: 20px; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 16px; 
       overflow: hidden; 
       background-color: white; 
       height: 100%; 
       min-height: 620px; 
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
     }
   </style>
 </head>
@@ -186,7 +128,8 @@
       <div class="card card-form h-100">
         <div class="card-body p-4 d-flex flex-column justify-content-between">
           <div>
-            <h2 class="card-title h4 mb-1 text-dark fw-bold" style="background: linear-gradient(45deg, #ff6b6b, #845ef7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">แบบฟอร์มจองห้องประชุม 3</h2>
+            <!-- แก้ไขสีหัวข้อจากสีรุ้ง เป็นสีครามเข้ม (Indigo) ดูเป็นทางการมากขึ้น -->
+            <h2 class="card-title h4 mb-1 fw-bold" style="color: #3730a3;">แบบฟอร์มจองห้องประชุม 3</h2>
             <p class="text-muted small mb-4">ระบบตรวจสอบคิวห้องว่างแบบ Real-time อัตโนมัติ</p>
             
             <form id="bookingForm" onsubmit="event.preventDefault(); submitForm();">
