@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    html { font-size: 16px; transition: font-size 0.2s ease; }
     body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
     .tab-active { background-color: #0284c7 !important; color: white !important; }
   </style>
@@ -20,7 +21,13 @@
       <i class="fa-regular fa-calendar-check text-lg"></i>
       <span class="font-bold text-base md:text-lg">ปฏิทินจองห้องประชุม</span>
     </div>
-    <div class="flex items-center space-x-3">
+    <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- ปุ่มปรับขนาดตัวอักษร -->
+      <div class="flex items-center bg-white/10 rounded overflow-hidden border border-white/20" title="ปรับขนาดตัวอักษร">
+        <button onclick="changeFontSize(-1)" class="px-2 py-1 hover:bg-white/20 text-xs font-bold transition" title="ลดขนาดตัวอักษร">ก-</button>
+        <button onclick="resetFontSize()" class="px-2 py-1 hover:bg-white/20 text-xs border-x border-white/20 transition" title="ขนาดปกติ">ก</button>
+        <button onclick="changeFontSize(1)" class="px-2 py-1 hover:bg-white/20 text-xs font-bold transition" title="เพิ่มขนาดตัวอักษร">ก+</button>
+      </div>
       <button onclick="fetchBookings()" title="รีเฟรชข้อมูล" class="text-xs bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded transition flex items-center space-x-1">
         <i class="fa-solid fa-rotate-right" id="refreshIcon"></i>
         <span class="hidden sm:inline">อัปเดตข้อมูล</span>
@@ -89,7 +96,7 @@
                 <div class="inline-flex items-center justify-center space-x-1.5">
                   <span>วันที่จอง</span>
                   <span id="dateSortIcon" class="text-xs text-blue-200 group-hover:text-white">
-                    <i class="fa-solid fa-sort-up"></i>
+                    <i class="fa-solid fa-clock"></i>
                   </span>
                 </div>
               </th>
@@ -171,11 +178,22 @@
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbykNkyufItsWW4tfu71Kbf2B2GzJFoiu1XfKIJMD2XbLufAKDEdNZG09_F9SbQU_lrL/exec';
 
     let rawBookings = [];
-    let dateSortOrder = 'asc';
+    let dateSortOrder = 'upcoming'; // 'upcoming' (ยังไม่ถึงขึ้นก่อน), 'asc', 'desc'
+    let currentFontSize = 16;
     let currentViewDate = new Date();
     let currentActiveTab = 'list';
     const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
     const roomsList = ['ห้องประชุม 1', 'ห้องประชุม 2', 'ห้องประชุม 3'];
+
+    // ฟังก์ชันปรับขนาดตัวอักษร
+    function changeFontSize(delta) {
+      currentFontSize = Math.min(22, Math.max(13, currentFontSize + delta));
+      document.documentElement.style.fontSize = currentFontSize + 'px';
+    }
+    function resetFontSize() {
+      currentFontSize = 16;
+      document.documentElement.style.fontSize = '16px';
+    }
 
     window.onload = function() {
       const todayStr = formatDateKey(new Date());
@@ -250,11 +268,17 @@
     }
 
     function toggleDateSort() {
-      dateSortOrder = (dateSortOrder === 'asc') ? 'desc' : 'asc';
       const icon = document.getElementById('dateSortIcon');
-      icon.innerHTML = dateSortOrder === 'asc' 
-        ? '<i class="fa-solid fa-sort-up"></i>' 
-        : '<i class="fa-solid fa-sort-down"></i>';
+      if (dateSortOrder === 'upcoming') {
+        dateSortOrder = 'asc';
+        icon.innerHTML = '<i class="fa-solid fa-sort-up"></i>';
+      } else if (dateSortOrder === 'asc') {
+        dateSortOrder = 'desc';
+        icon.innerHTML = '<i class="fa-solid fa-sort-down"></i>';
+      } else {
+        dateSortOrder = 'upcoming';
+        icon.innerHTML = '<i class="fa-solid fa-clock"></i>';
+      }
       renderList();
     }
 
@@ -286,9 +310,21 @@
     // 1. เรนเดอร์มุมมองรายการ
     function renderList() {
       let data = getFilteredEvents();
-      data.sort((a, b) => {
-        return dateSortOrder === 'asc' ? a.rawStart - b.rawStart : b.rawStart - a.rawStart;
-      });
+      const nowTime = new Date().getTime();
+
+      if (dateSortOrder === 'upcoming') {
+        // แยกรายการที่ยังไม่ถึง/กำลังประชุม ไว้ด้านบนสุด (เรียงจากใกล้สุดไปไกลสุด)
+        // และนำรายการที่ผ่านไปแล้วไว้ด้านล่าง (เรียงจากล่าสุดย้อนหลัง)
+        const upcoming = data.filter(item => (item.rawEnd || item.rawStart) >= nowTime)
+                             .sort((a, b) => a.rawStart - b.rawStart);
+        const past = data.filter(item => (item.rawEnd || item.rawStart) < nowTime)
+                         .sort((a, b) => b.rawStart - a.rawStart);
+        data = [...upcoming, ...past];
+      } else {
+        data.sort((a, b) => {
+          return dateSortOrder === 'asc' ? a.rawStart - b.rawStart : b.rawStart - a.rawStart;
+        });
+      }
 
       const tbody = document.getElementById('listTableBody');
       if (data.length === 0) {
@@ -296,10 +332,17 @@
         return;
       }
 
-      tbody.innerHTML = data.map((item, idx) => `
-        <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfe]'} hover:bg-sky-50/50 transition text-[13px]">
+      tbody.innerHTML = data.map((item, idx) => {
+        const isAllDayEvent = item.isAllDay || (item.startTime === '00:00' && item.endTime === '00:00') || item.startTime === 'ตลอดวัน';
+        const timeDisplay = isAllDayEvent 
+          ? `<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-semibold">ตลอดวัน</span>` 
+          : `${item.startTime} - ${item.endTime}`;
+        const isPast = (item.rawEnd || item.rawStart) < nowTime;
+
+        return `
+        <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfe]'} ${isPast ? 'opacity-65' : ''} hover:bg-sky-50/50 transition text-sm">
           <td class="py-3 px-4 text-center font-medium text-slate-600 whitespace-nowrap">${item.displayDate}</td>
-          <td class="py-3 px-4 text-center text-slate-700 whitespace-nowrap font-medium">${item.startTime} - ${item.endTime}</td>
+          <td class="py-3 px-4 text-center text-slate-700 whitespace-nowrap font-medium">${timeDisplay}</td>
           <td class="py-3 px-4 font-semibold text-slate-800">${item.room}</td>
           <td class="py-3 px-4 text-slate-800 font-medium">${item.title}</td>
           <td class="py-3 px-4 text-slate-600">${item.creator}</td>
@@ -307,7 +350,7 @@
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">${item.type}</span>
           </td>
         </tr>
-      `).join('');
+      `}).join('');
     }
 
     // 2. เรนเดอร์มุมมองปฏิทิน
@@ -331,11 +374,14 @@
         const dStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
         const dayEvents = data.filter(e => e.dateKey === dStr);
 
-        let eventBadges = dayEvents.slice(0, 3).map(e => `
-          <div class="bg-sky-100 text-sky-950 border-l-2 border-sky-600 p-1 rounded text-[11px] font-medium truncate mb-1 shadow-sm" title="${e.startTime} ${e.room} - ${e.title}">
-            <span class="font-bold text-sky-700">${e.startTime}</span> ${e.room}
+        let eventBadges = dayEvents.slice(0, 3).map(e => {
+          const isAllDayEvent = e.isAllDay || (e.startTime === '00:00' && e.endTime === '00:00') || e.startTime === 'ตลอดวัน';
+          const shortTime = isAllDayEvent ? 'ตลอดวัน' : e.startTime;
+          return `
+          <div class="bg-sky-100 text-sky-950 border-l-2 border-sky-600 p-1 rounded text-xs font-medium truncate mb-1 shadow-sm" title="${shortTime} ${e.room} - ${e.title}">
+            <span class="font-bold text-sky-700">${shortTime}</span> ${e.room}
           </div>
-        `).join('');
+        `}).join('');
 
         if (dayEvents.length > 3) {
           eventBadges += `<div class="text-[10px] text-sky-700 font-bold text-center">+${dayEvents.length - 3} รายการ</div>`;
@@ -372,8 +418,10 @@
         const eventsInRoom = dayEvents.filter(e => e.room === roomName);
         
         let blockHtml = eventsInRoom.map(ev => {
-          const sHour = Math.max(startBaseHour, Math.min(18, ev.startHour));
-          const eHour = Math.max(startBaseHour, Math.min(18, ev.endHour));
+          const isAllDayEvent = ev.isAllDay || (ev.startTime === '00:00' && ev.endTime === '00:00') || ev.startTime === 'ตลอดวัน';
+          const sHour = isAllDayEvent ? 7 : Math.max(startBaseHour, Math.min(18, ev.startHour));
+          const eHour = isAllDayEvent ? 18 : Math.max(startBaseHour, Math.min(18, ev.endHour));
+          const timeTooltip = isAllDayEvent ? 'ตลอดวัน' : `${ev.startTime} - ${ev.endTime}`;
 
           const leftPercent = ((sHour - startBaseHour) / totalHours) * 100;
           const widthPercent = Math.max(1.5, ((eHour - sHour) / totalHours) * 100);
@@ -381,8 +429,8 @@
           return `
             <div class="absolute top-1.5 bottom-1.5 bg-[#00a8e8] text-white rounded-md px-2.5 text-xs flex items-center shadow border border-sky-600 truncate transition hover:brightness-105"
                  style="left: ${leftPercent}%; width: ${widthPercent}%; z-index: 10;"
-                 title="${ev.startTime} - ${ev.endTime} : ${ev.title}">
-              <span class="truncate font-semibold drop-shadow-sm tracking-wide text-[12px]">${ev.title}</span>
+                 title="${timeTooltip} : ${ev.title}">
+              <span class="truncate font-semibold drop-shadow-sm tracking-wide text-xs">${ev.title}</span>
             </div>`;
         }).join('');
 
