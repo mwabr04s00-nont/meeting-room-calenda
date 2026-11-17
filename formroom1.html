@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจองห้องประชุม 1</title>
+  <!-- นำเข้า Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- นำเข้า Google Fonts (ฟอนต์ Prompt) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    body { 
+      /* ไล่เฉดสีพื้นหลังหน้าเว็บ ฟ้า-เขียวพาสเทล ให้ความรู้สึกสบายตาและละมุน */
+      background: linear-gradient(135deg, #a1c4fd 0%, #c2ffd8 100%);
+      background-attachment: fixed;
+      font-family: 'Prompt', sans-serif;
+      padding-top: 30px; 
+      padding-bottom: 30px; 
+      min-height: 100vh;
+    }
+    
+    .card-form { 
+      /* พื้นหลังฟอร์มไล่เฉดสีฟ้าพาสเทล เพื่อให้มีสีสันตัดกับปฏิทินอย่างชัดเจน */
+      background: linear-gradient(135deg, #eef2ff 0%, #c7d2fe 100%); 
+      border: 1px solid #a5b4fc;
+      border-top: 6px solid #4338ca; 
+      border-radius: 16px; 
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); 
+    }
+    .required { color: #e11d48; margin-left: 3px; }
+    
+    .form-label {
+      color: #334155;
+      font-weight: 500;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+    
+    /* โครงสร้างพื้นฐานของกล่องกรอกข้อมูล (เปลี่ยนให้เป็นฟอร์มมาตรฐานเดียวกันหมด) */
+    .form-control, .form-select {
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 400;
+      transition: all 0.2s ease-in-out;
+      border: 1px solid #cbd5e1;
+      background-color: #fcfcfc;
+      color: #1e293b;
+    }
+
+    /* สไตล์เวลากดพิมพ์ (Focus) ใช้สีครามเป็น Accent หลัก */
+    .form-control:focus, .form-select:focus {
+      background-color: #fff;
+      border-color: #6366f1; 
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+      outline: none;
+    }
+
+    /* สไตล์ตอนที่ช่องโดนปิดล็อก (ยังไม่เลือกวันที่) */
+    .form-select:disabled {
+      background-color: #f1f5f9;
+      color: #94a3b8;
+      border-color: #e2e8f0;
+    }
+    
+    /* ปุ่มส่งข้อมูล ดีไซน์เฉดสีครามแบบพรีเมียม */
+    .btn-submit { 
+      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); 
+      color: white; 
+      border: none;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+    .btn-submit:hover { 
+      background: linear-gradient(135deg, #4338ca 0%, #312e81 100%); 
+      color: white; 
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+    }
+    .btn-submit:disabled { 
+      background: #e2e8f0; 
+      color: #94a3b8; 
+      box-shadow: none;
+      transform: none;
+    }
+    
+    /* ปุ่มล้างข้อมูลแบบ Clean */
+    .btn-clear {
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      color: #475569;
+      transition: all 0.2s;
+      background-color: #f8fafc;
+    }
+    .btn-clear:hover {
+      background-color: #f1f5f9;
+      border-color: #94a3b8;
+      color: #334155;
+    }
+    
+    /* กรอบปฏิทิน (ปรับเป็นสีขาวทึบ เพื่อให้คอนทราสต์กับฟอร์มและพื้นหลัง) */
+    .calendar-container { 
+      background: #ffffff; 
+      border: none;
+      border-radius: 16px; 
+      overflow: hidden; 
+      height: 100%; 
+      min-height: 620px; 
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 1200px;">
+  <div class="row g-4 align-items-stretch">
+    
+    <!-- ฝั่งซ้าย: ตารางปฏิทิน Google Calendar -->
+    <div class="col-lg-7 d-flex flex-column">
+      <div class="calendar-container flex-grow-1">
+        <!-- ⚠️ อัปเดตลิงก์ตรง src เป็นลิงก์ Google Calendar ของห้อง 1 -->
+        <iframe id="calendarSheet" src="https://calendar.google.com/calendar/embed?src=4209e3af7cc58769f2c43a438933189dfa640457dddd06e6d0882d103c5d8755%40group.calendar.google.com&ctz=Asia%2FBangkok" style="border: 0; width:100%; height:100%; min-height:620px;" frameborder="0" scrolling="no"></iframe>
+      </div>
+      <!-- ปรับสีตัวอักษรแจ้งเตือนให้สว่างขึ้น เพื่อให้อ่านง่ายบนพื้นหลังสีเข้ม -->
+      <p class="text-center small mt-3 mb-0" style="color: #f8fafc; background: rgba(0, 0, 0, 0.25); padding: 8px 16px; border-radius: 8px; display: inline-block; align-self: center; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px);">
+        *** หลังจากส่งแบบฟอร์มแล้ว หากปฏิทินยังไม่แสดงรายการจอง ให้รีเฟรชหน้าจอ 1-2 ครั้ง
+      </p>
+    </div>
+
+    <!-- ฝั่งขวา: แบบฟอร์มจองห้องประชุม -->
+    <div class="col-lg-5">
+      <div class="card card-form h-100">
+        <div class="card-body p-4 d-flex flex-column justify-content-between">
+          <div>
+            <!-- แก้ไขสีหัวข้อเป็นสีครามเข้ม (Indigo) ดูเป็นทางการมากขึ้น -->
+            <h2 class="card-title h4 mb-1 fw-bold" style="color: #3730a3;">แบบฟอร์มจองห้องประชุม 1</h2>
+            <p class="text-muted small mb-4">ระบบตรวจสอบคิวห้องว่างแบบ Real-time อัตโนมัติ</p>
+            
+            <form id="bookingForm" onsubmit="event.preventDefault(); submitForm();">
+              
+              <div class="mb-3">
+                <label for="title" class="form-label">🔷 หัวข้อการประชุม<span class="required">*</span></label>
+                <input type="text" class="form-control" id="title" required placeholder="รายละเอียดการประชุมสั้นๆ">
+              </div>
+
+              <div class="mb-3">
+                <label for="date" class="form-label">📅 วันที่ต้องการ<span class="required">*</span></label>
+                <input type="date" class="form-control" id="date" required onchange="getAvailableTimes(this.value)">
+                <div id="loadingText" class="form-text mt-2" style="display: none; color: #ff6b6b; font-weight: 500;">
+                  <div class="spinner-border spinner-border-sm me-1" role="status"></div> กำลังตรวจสอบสถานะห้องว่าง...
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="timeType" class="form-label">⏰ ช่วงเวลาที่ต้องการ<span class="required">*</span></label>
+                <select class="form-select" id="timeType" required disabled>
+                  <option value="">-- โปรดเลือกวันที่ก่อน --</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="requester" class="form-label">👤 ชื่อผู้จอง และหน่วยงานที่สังกัด<span class="required">*</span></label>
+                <input type="text" class="form-control" id="requester" required placeholder="ระบุชื่อ-นามสกุล และฝ่าย/แผนก">
+              </div>
+
+              <div class="mb-3">
+                <label for="phone" class="form-label">📞 หมายเลขโทรศัพท์ภายใน<span class="required">*</span></label>
+                <input type="text" class="form-control" id="phone" required placeholder="สำหรับติดต่อกลับ">
+              </div>
+
+              <div class="mb-4">
+                <label for="note" class="form-label">💡 ข้อมูลเพิ่มเติม (หากมี)</label>
+                <textarea class="form-control" id="note" rows="3" placeholder="ระบุข้อมูลเพิ่มเติมอื่นๆ"></textarea>
+              </div>
+
+              <div class="row g-2">
+                <div class="col-5">
+                  <button type="button" class="btn btn-clear w-100 fw-bold py-2.5" onclick="resetForm()">ล้างข้อมูล</button>
+                </div>
+                <div class="col-7">
+                  <button type="submit" id="submitBtn" class="btn btn-submit w-100 fw-bold py-2.5" disabled>ส่งข้อมูลการจอง</button>
+                </div>
+              </div>
+              
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // ⚠️ ให้นำ URL ที่ได้จากการ Deploy Google Apps Script ของห้อง 1 มาใส่ตรงนี้
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwNcJnl05xM_DWXVOpGMNz5c2JmvxR6Vkl7NgQeNs-YNMj7xY3YFvEd49yAMletEytilA/exec";
+
+  function resetForm() {
+    document.getElementById("bookingForm").reset();
+    var select = document.getElementById("timeType");
+    var submitBtn = document.getElementById("submitBtn");
+    select.classList.remove("is-invalid");
+    select.disabled = true;
+    select.innerHTML = '<option value="">-- โปรดเลือกวันที่ก่อน --</option>';
+    submitBtn.disabled = true;
+  }
+
+  function getAvailableTimes(dateVal) {
+    if (!dateVal) return;
+    var select = document.getElementById("timeType");
+    var submitBtn = document.getElementById("submitBtn");
+    var loadingText = document.getElementById("loadingText");
+    loadingText.style.display = "block";
+    select.disabled = true;
+    submitBtn.disabled = true;
+    
+    // ยิง HTTP GET ไปที่ Google Apps Script เพื่อเช็กห้องว่าง
+    fetch(`${GAS_API_URL}?action=check&date=${dateVal}`)
+      .then(response => response.json())
+      .then(status => {
+        loadingText.style.display = "none";
+        select.innerHTML = ""; 
+        select.classList.remove("is-invalid");
+        
+        if (status.hasAllDay || (status.hasMorning && status.hasAfternoon)) {
+          var opt = document.createElement("option");
+          opt.value = ""; opt.text = "❌ วันนี้ห้องประชุมเต็มแล้วทุกช่วงเวลา";
+          select.add(opt); select.classList.add("is-invalid"); return; 
+        }
+        var options = [];
+        if (!status.hasMorning && !status.hasAfternoon) options.push("ตลอดทั้งวัน");
+        if (!status.hasMorning) options.push("ครึ่งวันเช้า");
+        if (!status.hasAfternoon) options.push("ครึ่งวันบ่าย");
+        
+        options.forEach(function(time) {
+          var opt = document.createElement("option");
+          opt.value = time; opt.text = time; select.add(opt);
+        });
+        select.disabled = false; submitBtn.disabled = false;
+      })
+      .catch(error => {
+        loadingText.style.display = "none";
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error);
+        resetForm();
+      });
+  }
+
+  function submitForm() {
+    var submitBtn = document.getElementById("submitBtn");
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+    
+    var data = {
+      title: document.getElementById("title").value,
+      date: document.getElementById("date").value,
+      timeType: document.getElementById("timeType").value,
+      requester: document.getElementById("requester").value,
+      phone: document.getElementById("phone").value,
+      note: document.getElementById("note").value
+    };
+    
+    // ยิง HTTP POST ไปที่ Google Apps Script เพื่อบันทึกข้อมูล
+    fetch(GAS_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8", // ต้องใช้ text/plain สำหรับ GAS
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if(result.status === 'success') {
+        alert(result.message);
+        resetForm();
+        
+        // รีเฟรชปฏิทิน
+        var calFrame = document.getElementById("calendarSheet");
+        if (calFrame) {
+          calFrame.src = calFrame.src;
+        }
+      } else {
+        alert("เกิดข้อผิดพลาด: " + result.message);
+      }
+      submitBtn.innerText = "ส่งข้อมูลการจอง";
+    })
+    .catch(error => {
+      alert("ไม่สามารถบันทึกข้อมูลได้: " + error);
+      submitBtn.disabled = false;
+      submitBtn.innerText = "ส่งข้อมูลการจอง";
+    });
+  }
+</script>
+</body>
+</html>
