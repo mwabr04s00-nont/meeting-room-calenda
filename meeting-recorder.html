@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบันทึกและสรุปรายงานการประชุมอัจฉริยะ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+  <div id="invalidAccessScreen" class="hidden min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 max-w-md w-full p-6 text-center">
+      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i class="fa-solid fa-calendar-xmark"></i></div>
+      <h2 class="text-lg font-bold text-slate-800 mb-2">กรุณาเข้าใช้งานผ่านปฏิทินจองห้องประชุม</h2>
+      <p class="text-sm text-slate-500">ระบบนี้รองรับเฉพาะการประชุมที่เป็นทางการที่มีการลงคิวในปฏิทินรวมเท่านั้น</p>
+    </div>
+  </div>
+
+  <div id="mainWorkspace" class="max-w-4xl mx-auto p-4 md:p-6 hidden">
+    <header class="bg-white rounded-xl shadow-sm p-5 mb-6 border border-slate-200 relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+      <div class="flex flex-wrap justify-between items-start gap-2 pl-2">
+        <div>
+          <span id="deviceBadge" class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-2">
+            กำลังตรวจสอบอุปกรณ์...
+          </span>
+          <h1 id="meetingTitle" class="text-xl md:text-2xl font-bold text-slate-900">กำลังโหลดข้อมูลการประชุม...</h1>
+          <p id="meetingMeta" class="text-sm text-slate-500 mt-1">📍 ห้องประชุม: - | 📅 วันที่: -</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="exportDocBtn" onclick="exportToGoogleDocs()" class="hidden px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-sm transition flex items-center gap-1.5">
+            <i class="fa-solid fa-file-word"></i> สร้าง Google Docs
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div id="agendasContainer" class="space-y-4"></div>
+
+    <div id="addAgendaWrapper" class="mt-6 text-center hidden">
+      <button onclick="addNewAgenda()" class="px-5 py-2.5 bg-white border-2 border-dashed border-blue-400 text-blue-600 hover:bg-blue-50 rounded-xl font-medium transition shadow-sm">
+        <i class="fa-solid fa-plus mr-1"></i> เพิ่มวาระการประชุม
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: ยืนยันหยุดอัดเสียงอัจฉริยะ -->
+  <div id="stopRecordModal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all text-center p-6">
+      <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl animate-pulse">
+        <i class="fa-solid fa-microphone-slash"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-800 mb-1">ยืนยันการหยุดบันทึกเสียง</h3>
+      <p class="text-sm text-slate-500 mb-5">คุณต้องการจัดการวาระที่กำลังบันทึกอยู่อย่างไร?</p>
+
+      <!-- ตัวเลือกที่ 1: หน้าจอแรก (เลือก Action) -->
+      <div id="stopOptions" class="space-y-3">
+        <button onclick="confirmStop(false)" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check-circle"></i> จบวาระนี้ (ให้ AI เริ่มสรุปทันที)
+        </button>
+        <button onclick="showContinuedInput()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-pause-circle"></i> พักเบรก / ถกเถียงยาว (ตั้งวาระต่อเนื่อง)
+        </button>
+        <button onclick="cancelStop()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-xl transition mt-2">
+          ยกเลิก (บันทึกเสียงต่อ)
+        </button>
+      </div>
+
+      <!-- ตัวเลือกที่ 2: หน้าจอกรอกชื่อวาระต่อเนื่อง (ถ้าเลือก พักเบรก) -->
+      <div id="continuedSection" class="hidden mt-2 text-left">
+        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-4">
+           <label class="block text-sm font-bold text-amber-900 mb-2">ชื่อวาระต่อเนื่อง <span class="text-xs text-amber-700 font-normal">(ระบบตั้งให้อัตโนมัติ แก้ไขได้)</span></label>
+           <input type="text" id="continuedTitleInput" class="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-slate-800 font-medium">
+        </div>
+        <div class="flex gap-2">
+          <button onclick="cancelStop()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition">ยกเลิก</button>
+          <button onclick="confirmStop(true)" class="flex-[1.5] bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl shadow-sm transition">หยุดและสร้างวาระทันที</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 🔴🔴🔴 ตั้งค่า API 2 จุดตรงนี้ 🔴🔴🔴
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx71uwm3eL1WcdWKlwbMLEEyWYxUQD7_QIqLBnB6_jKw6uPSjOvzF1DQneUvC2Zr_POIQ/exec"; 
+    const LIFF_ID = "YOUR_LIFF_ID"; 
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZDd23UFQcXfjCOE3_mbCE9YyYTst8dU0",
+      authDomain: "meeting-rec-and-report.firebaseapp.com",
+      projectId: "meeting-rec-and-report"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentEventId = urlParams.get('eventId');
+    const urlMode = urlParams.get('mode');
+
+    let isRecorderMode = false;
+    let meetingData = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingAgendaNum = null;
+    let pendingStopAgendaNum = null; 
+
+    window.onload = async () => {
+      if (!currentEventId) {
+        document.getElementById('invalidAccessScreen').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('mainWorkspace').classList.remove('hidden');
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      try {
+        if (LIFF_ID && LIFF_ID !== "YOUR_LIFF_ID") await liff.init({ liffId: LIFF_ID });
+      } catch (e) { console.log('LIFF init failed', e); }
+
+      if (!isMobile && urlMode === 'record') {
+        isRecorderMode = true;
+        document.getElementById('deviceBadge').innerHTML = "<i class='fa-solid fa-laptop mr-1'></i> โหมดผู้บันทึกการประชุม (Desktop)";
+        document.getElementById('addAgendaWrapper').classList.remove('hidden');
+        document.getElementById('exportDocBtn').classList.remove('hidden');
+      } else {
+        isRecorderMode = false;
+        document.getElementById('deviceBadge').innerHTML = "<i class='fa-solid fa-mobile-screen mr-1'></i> โหมดติดตามรายงานการประชุม (Read-Only)";
+        document.getElementById('deviceBadge').className = "inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 mb-2";
+      }
+      loadMeetingData();
+    };
+
+    async function loadMeetingData() {
+      const docRef = db.collection('meetings').doc(currentEventId);
+      const docSnap = await docRef.get();
+
+      if (!docSnap.exists) {
+        if (!isRecorderMode) {
+          document.getElementById('meetingTitle').innerText = "รอผู้บันทึกเริ่มการประชุม...";
+          return;
+        }
+
+        const res = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'getMeetingInfo', eventId: currentEventId })
+        }).then(r => r.json());
+
+        if (res.status === 'success') {
+          meetingData = {
+            ...res.meeting,
+            agendas: [
+              { number: 1, title: 'เรื่องแจ้งเพื่อทราบ', status: 'idle', summary: '' },
+              { number: 2, title: 'เรื่องเพื่อพิจารณา', status: 'idle', summary: '' },
+              { number: 3, title: 'เรื่องอื่นๆ', status: 'idle', summary: '' }
+            ]
+          };
+          await docRef.set(meetingData);
+        } else {
+          alert(res.message);
+          return;
+        }
+      }
+
+      docRef.onSnapshot((snapshot) => {
+        if (snapshot.exists) {
+          meetingData = snapshot.data();
+          renderUI();
+        }
+      });
+    }
+
+    function renderUI() {
+      document.getElementById('meetingTitle').innerText = meetingData.title || '(ไม่มีหัวข้อ)';
+      const dateStr = new Date(meetingData.startTime).toLocaleDateString('th-TH', { dateStyle: 'long' });
+      document.getElementById('meetingMeta').innerText = `📍 ${meetingData.room || 'ไม่ระบุ'} | 📅 ${dateStr}`;
+
+      const container = document.getElementById('agendasContainer');
+      container.innerHTML = '';
+
+      meetingData.agendas.forEach((agenda, index) => {
+        const isRecordingThis = (recordingAgendaNum === agenda.number);
+        
+        let actionButtons = '';
+        if (isRecorderMode) {
+          if (isRecordingThis) {
+            actionButtons = `<button onclick="stopRecordingPrompt(${agenda.number})" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium animate-pulse shadow-md"><i class="fa-solid fa-stop mr-1"></i> หยุดอัดเสียง</button>`;
+          } else if (agenda.status === 'processing') {
+            actionButtons = `<span class="text-sm text-amber-600 font-bold bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> ⏳ AI กำลังสรุป...</span>`;
+          } else {
+            actionButtons = `<button onclick="startRecording(${agenda.number})" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition"><i class="fa-solid fa-microphone mr-1"></i> อัดเสียงวาระนี้</button>`;
+          }
+        } else {
+          if (agenda.status === 'recording') {
+            actionButtons = `<span class="text-xs px-2.5 py-1 bg-red-100 text-red-700 rounded-full font-bold animate-pulse border border-red-200">🔴 กำลังบันทึกเสียง...</span>`;
+          } else if (agenda.status === 'processing') {
+            actionButtons = `<span class="text-xs px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full font-medium border border-amber-200">⏳ AI กำลังสรุป...</span>`;
+          } else if (agenda.status === 'done') {
+            actionButtons = `<span class="text-xs px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium border border-emerald-200">✅ สรุปแล้ว</span>`;
+          }
+        }
+
+        const card = `
+          <div class="bg-white rounded-xl shadow-sm p-5 border ${isRecordingThis ? 'border-red-400 ring-2 ring-red-100' : 'border-slate-200'} transition-all">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+              <div class="flex items-center gap-2 flex-1">
+                <span class="bg-slate-800 text-white text-xs font-bold px-2.5 py-1 rounded-md">วาระที่ ${agenda.number}</span>
+                ${isRecorderMode 
+                  ? `<input type="text" value="${agenda.title}" onchange="updateAgendaTitle(${index}, this.value)" class="font-bold text-slate-800 border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full max-w-md bg-transparent">`
+                  : `<h3 class="font-bold text-slate-800">${agenda.title}</h3>`
+                }
+              </div>
+              <div>${actionButtons}</div>
+            </div>
+            <div class="text-sm text-slate-700 whitespace-pre-line leading-relaxed bg-slate-50 p-4 rounded-lg min-h-[80px] border border-slate-100">
+              ${agenda.summary || '<span class="text-slate-400 italic">ยังไม่มีบันทึกสรุปสำหรับวาระนี้...</span>'}
+            </div>
+          </div>
+        `;
+        container.innerHTML += card;
+      });
+    }
+
+    function stopRecordingPrompt(agendaNum) {
+      pendingStopAgendaNum = agendaNum;
+      const agenda = meetingData.agendas.find(a => a.number === agendaNum);
+      
+      document.getElementById('continuedTitleInput').value = `${agenda.title} (ต่อ)`;
+      document.getElementById('stopOptions').classList.remove('hidden');
+      document.getElementById('continuedSection').classList.add('hidden');
+      document.getElementById('stopRecordModal').classList.remove('hidden');
+    }
+
+    function showContinuedInput() {
+      document.getElementById('stopOptions').classList.add('hidden');
+      document.getElementById('continuedSection').classList.remove('hidden');
+    }
+
+    function cancelStop() {
+      document.getElementById('stopRecordModal').classList.add('hidden');
+      pendingStopAgendaNum = null;
+    }
+
+    async function confirmStop(createContinuedAgenda) {
+      const agendaNum = pendingStopAgendaNum;
+      document.getElementById('stopRecordModal').classList.add('hidden');
+
+      if (createContinuedAgenda) {
+        const newTitle = document.getElementById('continuedTitleInput').value.trim();
+        const nextNum = meetingData.agendas.length + 1;
+        meetingData.agendas.push({ number: nextNum, title: newTitle, status: 'idle', summary: '' });
+        await db.collection('meetings').doc(currentEventId).update({ agendas: meetingData.agendas });
+      }
+
+      if (mediaRecorder && recordingAgendaNum === agendaNum) {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        recordingAgendaNum = null;
+      }
+      
+      pendingStopAgendaNum = null;
+    }
+
+    async function startRecording(agendaNum) {
+      if (recordingAgendaNum !== null) return alert("กรุณากดหยุดอัดเสียงวาระปัจจุบันก่อนครับ");
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm', audioBitsPerSecond: 32000 });
+        audioChunks = [];
+        recordingAgendaNum = agendaNum;
+
+        const agendaIndex = meetingData.agendas.findIndex(a => a.number === agendaNum);
+        meetingData.agendas[agendaIndex].status = 'recording';
+        await db.collection('meetings').doc(currentEventId).update({ agendas: meetingData.agendas });
+
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => uploadAndProcessAudio(agendaNum); 
+
+        mediaRecorder.start();
+        renderUI();
+      } catch (err) {
+        alert("ไม่สามารถเข้าถึงไมโครโฟนได้: " + err.message);
+      }
+    }
+
+    async function uploadAndProcessAudio(agendaNum) {
+      const agendaIndex = meetingData.agendas.findIndex(a => a.number === agendaNum);
+      meetingData.agendas[agendaIndex].status = 'processing';
+      await db.collection('meetings').doc(currentEventId).update({ agendas: meetingData.agendas });
+
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const base64Audio = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]); 
+        reader.readAsDataURL(audioBlob);
+      });
+      
+      try {
+        const res = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'processAgendaAudio',
+            eventId: currentEventId,
+            meetingTitle: meetingData.title,
+            roomName: meetingData.room,
+            agendaNum: agendaNum,
+            agendaTitle: meetingData.agendas[agendaIndex].title,
+            audioBase64: base64Audio,
+            mimeType: 'audio/webm'
+          })
+        }).then(r => r.json());
+
+        if (res.status === 'success') {
+          meetingData.agendas[agendaIndex].status = 'done';
+          meetingData.agendas[agendaIndex].summary = res.summary;
+        } else {
+          meetingData.agendas[agendaIndex].status = 'idle';
+          alert("เกิดข้อผิดพลาดจาก AI: " + res.message);
+        }
+      } catch (err) {
+        meetingData.agendas[agendaIndex].status = 'idle';
+        alert("ประมวลผลไม่สำเร็จ: " + err.message);
+      }
+      
+      await db.collection('meetings').doc(currentEventId).update({ agendas: meetingData.agendas });
+    }
+
+    async function addNewAgenda() {
+      const nextNum = meetingData.agendas.length + 1;
+      meetingData.agendas.push({ number: nextNum, title: `วาระเพิ่มเติมที่ ${nextNum}`, status: 'idle', summary: '' });
+      await db.collection('meetings').doc(currentEventId).update({ agendas: meetingData.agendas });
+    }
+
+    async function updateAgendaTitle(index, newTitle) {
+      meetingData.agendas[index].title = newTitle;
+      await db.collection('meetings').doc(currentEventId).update({ agendas: meetingData.agendas });
+    }
+
+    async function exportToGoogleDocs() {
+      const btn = document.getElementById('exportDocBtn');
+      btn.innerHTML = "<i class='fa-solid fa-circle-notch fa-spin mr-1'></i> กำลังสร้างเอกสาร...";
+      btn.disabled = true;
+
+      const dateStr = new Date(meetingData.startTime).toLocaleDateString('th-TH', { dateStyle: 'long' });
+      try {
+        const res = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'exportGoogleDoc',
+            eventId: currentEventId,
+            meetingTitle: meetingData.title,
+            roomName: meetingData.room,
+            dateStr: dateStr,
+            guests: meetingData.guests || [],
+            agendas: meetingData.agendas
+          })
+        }).then(r => r.json());
+
+        if (res.status === 'success') {
+          await db.collection('meetings').doc(currentEventId).update({ docUrl: res.docUrl });
+          window.open(res.docUrl, '_blank');
+        } else {
+          alert(res.message);
+        }
+      } catch (e) {
+        alert("ไม่สามารถเชื่อมต่อเพื่อสร้างเอกสารได้");
+      }
+      btn.innerHTML = "<i class='fa-solid fa-file-word mr-1'></i> สร้าง Google Docs";
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>
