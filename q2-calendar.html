@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบปฏิทินการจองห้องประชุมอัจฉริยะ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    html { font-size: 16px; transition: font-size 0.2s ease; }
+    body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+    .tab-active { background-color: #0284c7 !important; color: white !important; }
+  </style>
+</head>
+<body class="text-slate-700">
+
+  <!-- Header ด้านบน -->
+  <div class="bg-[#005aab] text-white px-6 py-3 flex justify-between items-center shadow-md">
+    <div class="flex items-center space-x-2">
+      <i class="fa-regular fa-calendar-check text-lg"></i>
+      <span class="font-bold text-base md:text-lg">ปฏิทินจองห้องประชุม</span>
+    </div>
+    <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- ปุ่มสร้างการประชุมนอกสถานที่ด่วน -->
+      <button onclick="document.getElementById('offsiteModal').classList.remove('hidden')" class="hidden md:flex bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-1.5 px-3 rounded shadow-sm transition items-center gap-1.5 border border-amber-400">
+        <i class="fa-solid fa-plus"></i> บันทึกนอกสถานที่
+      </button>
+
+      <div class="flex items-center bg-white/10 rounded overflow-hidden border border-white/20" title="ปรับขนาดตัวอักษร">
+        <button onclick="changeFontSize(-1)" class="px-2 py-1 hover:bg-white/20 text-xs font-bold transition">ก-</button>
+        <button onclick="resetFontSize()" class="px-2 py-1 hover:bg-white/20 text-xs border-x border-white/20 transition">ก</button>
+        <button onclick="changeFontSize(1)" class="px-2 py-1 hover:bg-white/20 text-xs font-bold transition">ก+</button>
+      </div>
+      <button onclick="fetchBookings()" title="รีเฟรชข้อมูล" class="text-xs bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded transition flex items-center space-x-1">
+        <i class="fa-solid fa-rotate-right" id="refreshIcon"></i>
+        <span class="hidden sm:inline">อัปเดตข้อมูล</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto p-4 md:p-6 space-y-4">
+    <div class="flex items-center space-x-2">
+      <button id="btn-list" onclick="switchView('list')" class="tab-active flex items-center px-4 py-2 rounded-lg bg-white border border-slate-200 shadow-sm text-sm font-medium transition"><i class="fa-solid fa-list-ul mr-2"></i> รายการ</button>
+      <button id="btn-cal" onclick="switchView('cal')" class="flex items-center px-4 py-2 rounded-lg bg-white border border-slate-200 shadow-sm text-slate-600 text-sm font-medium hover:bg-slate-50 transition"><i class="fa-regular fa-calendar-days mr-2"></i> ปฏิทิน</button>
+      <button id="btn-timeline" onclick="switchView('timeline')" class="flex items-center px-4 py-2 rounded-lg bg-white border border-slate-200 shadow-sm text-slate-600 text-sm font-medium hover:bg-slate-50 transition"><i class="fa-solid fa-chart-gantt mr-2"></i> ไทม์ไลน์</button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+        <input type="text" id="searchInput" oninput="filterData()" placeholder="ค้นหาเรื่องประชุม หน่วยงาน หรือห้อง" class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-sky-500 bg-slate-50">
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        <select id="filterRoom" onchange="filterData()" class="p-2 border border-slate-200 rounded-lg bg-white text-slate-600">
+          <option value="">ทุกห้องประชุม</option>
+          <option value="ห้องประชุม 1">ห้องประชุม 1</option>
+          <option value="ห้องประชุม 2">ห้องประชุม 2</option>
+          <option value="ห้องประชุม 3">ห้องประชุม 3</option>
+          <option value="นอกสถานที่">นอกสถานที่</option>
+        </select>
+        <select id="filterTime" onchange="filterData()" class="p-2 border border-slate-200 rounded-lg bg-white text-slate-600">
+          <option value="">ทุกช่วงเวลา</option>
+          <option value="morning">ช่วงเช้า (ก่อน 12:00)</option>
+          <option value="afternoon">ช่วงบ่าย (หลัง 12:00)</option>
+        </select>
+        <select id="filterDept" onchange="filterData()" class="p-2 border border-slate-200 rounded-lg bg-white text-slate-600">
+          <option value="">ทุกหน่วยงาน/ผู้จอง</option>
+        </select>
+        <select id="filterType" onchange="filterData()" class="p-2 border border-slate-200 rounded-lg bg-white text-slate-600">
+          <option value="">ทุกประเภท</option>
+          <option value="ประชุม">ประชุม</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="loading" class="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-sky-600 mb-2"></i>
+      <p class="text-sm text-slate-500">กำลังเชื่อมต่อข้อมูลจาก Google Calendar...</p>
+    </div>
+
+    <div id="view-list" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-[#0070c0] text-white">
+            <tr>
+              <th onclick="toggleDateSort()" class="py-3 px-4 font-medium text-center w-40 cursor-pointer select-none hover:bg-[#005aab] transition group" title="คลิกเพื่อสลับการเรียงลำดับวันที่">
+                <div class="inline-flex items-center justify-center space-x-1.5">
+                  <span>วันที่จอง</span>
+                  <span id="dateSortIcon" class="text-xs text-blue-200 group-hover:text-white"><i class="fa-solid fa-clock"></i></span>
+                </div>
+              </th>
+              <th class="py-3 px-4 font-medium text-center w-36">เวลาประชุม</th>
+              <th class="py-3 px-4 font-medium w-44">ห้องที่จอง</th>
+              <th class="py-3 px-4 font-medium">เรื่องที่ประชุม</th>
+              <th class="py-3 px-4 font-medium w-52">หน่วยงาน/ผู้จอง</th>
+              <th class="py-3 px-4 font-medium text-center w-28">ประเภท</th>
+            </tr>
+          </thead>
+          <tbody id="listTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="view-cal" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="calendarMonthTitle" class="text-lg font-bold text-slate-800"></h2>
+        <div class="flex space-x-1">
+          <button onclick="prevMonth()" class="px-3 py-1 border rounded hover:bg-slate-100 text-sm"><i class="fa-solid fa-chevron-left"></i></button>
+          <button onclick="currentMonthView()" class="px-3 py-1 border rounded hover:bg-slate-100 text-sm">วันนี้</button>
+          <button onclick="nextMonth()" class="px-3 py-1 border rounded hover:bg-slate-100 text-sm"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden text-center text-xs font-semibold text-slate-600">
+        <div class="bg-slate-50 py-2">อา</div><div class="bg-slate-50 py-2">จ</div><div class="bg-slate-50 py-2">อ</div>
+        <div class="bg-slate-50 py-2">พ</div><div class="bg-slate-50 py-2">พฤ</div><div class="bg-slate-50 py-2">ศ</div><div class="bg-slate-50 py-2">ส</div>
+      </div>
+      <div id="calendarDaysGrid" class="grid grid-cols-7 gap-px bg-slate-200 border-x border-b border-slate-200 text-xs"></div>
+    </div>
+
+    <div id="view-timeline" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <input type="date" id="timelineDateInput" onchange="renderTimeline()" class="border border-slate-200 p-1.5 rounded-lg text-sm font-medium">
+          <span id="timelineSelectedDateText" class="font-bold text-slate-800 text-base"></span>
+        </div>
+      </div>
+      <div id="timelineDayPills" class="flex overflow-x-auto space-x-2 pb-2"></div>
+      <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-sm">
+        <div class="min-w-[980px]">
+          <div class="flex bg-slate-100 border-b border-slate-200 text-[12px] font-semibold text-slate-600 py-2.5">
+            <div class="w-36 pl-3 flex-shrink-0">ห้องที่จอง</div>
+            <div class="flex-1 grid grid-cols-11 text-left relative">
+              <div class="border-l border-slate-300 pl-1">07:00</div>
+              <div class="border-l border-slate-300 pl-1">08:00</div><div class="border-l border-slate-300 pl-1">09:00</div>
+              <div class="border-l border-slate-300 pl-1">10:00</div><div class="border-l border-slate-300 pl-1">11:00</div>
+              <div class="border-l border-slate-300 pl-1">12:00</div><div class="border-l border-slate-300 pl-1">13:00</div>
+              <div class="border-l border-slate-300 pl-1">14:00</div><div class="border-l border-slate-300 pl-1">15:00</div>
+              <div class="border-l border-slate-300 pl-1">16:00</div><div class="border-l border-slate-300 pl-1">17:00</div>
+              <div class="absolute right-0 top-0 bottom-0 pr-1 text-slate-400 font-normal">18:00</div>
+            </div>
+          </div>
+          <div id="timelineRows" class="divide-y divide-slate-100 bg-white"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: แสดงรายละเอียดการจอง และ ปุ่ม AI -->
+  <div id="eventDetailModal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+      <div class="bg-sky-600 px-5 py-4 flex justify-between items-center">
+        <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-calendar-check"></i> รายละเอียดการจอง</h3>
+        <button onclick="closeEventDetail()" class="text-sky-200 hover:text-white transition text-xl"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="mb-4">
+          <h4 id="modalTitle" class="text-xl font-bold text-slate-800 mb-1 leading-tight"></h4>
+          <p id="modalCreator" class="text-sm text-slate-500 font-medium"></p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div><p class="text-slate-500 mb-0.5">📅 วันที่ประชุม</p><p id="modalDate" class="font-semibold text-slate-800"></p></div>
+          <div><p class="text-slate-500 mb-0.5">🕒 เวลา</p><p id="modalTime" class="font-semibold text-slate-800"></p></div>
+          <div class="col-span-2"><p class="text-slate-500 mb-0.5">📍 ห้องประชุม</p><p id="modalRoom" class="font-semibold text-slate-800"></p></div>
+        </div>
+        <div id="meeting-ai-action-box" class="mt-5 pt-5 border-t border-slate-200 min-h-[80px]"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: สร้างการประชุมนอกสถานที่ด่วน -->
+  <div id="offsiteModal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+      <div class="flex items-center gap-2 mb-2 text-amber-600 text-lg font-bold">
+        <i class="fa-solid fa-building-user"></i> บันทึกการประชุมนอกสถานที่
+      </div>
+      <p class="text-xs text-slate-500 mb-5 leading-relaxed">ระบบจะสร้างคิวใหม่ลงในปฏิทินรวมให้อัตโนมัติ เพื่อให้ผู้บริหารติดตามรายงานสดผ่านเครื่องมือสื่อสารได้ทันที</p>
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">หัวข้อการประชุม <span class="text-red-500">*</span></label>
+          <input type="text" id="offsiteTitle" placeholder="เช่น ประชุมสรุปแผนงานประจำเดือน" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">สถานที่ประชุม</label>
+          <input type="text" id="offsiteLocation" value="สำนักงานใหญ่" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500">
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="document.getElementById('offsiteModal').classList.add('hidden')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold py-2.5 rounded-lg transition">ยกเลิก</button>
+        <button id="btnCreateOffsite" onclick="submitOffsiteMeeting()" class="flex-[1.5] bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold py-2.5 rounded-lg shadow-sm transition">สร้างและเริ่มบันทึกเสียง</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 🔴🔴🔴 ตั้งค่า API 3 จุดตรงนี้ 🔴🔴🔴
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx71uwm3eL1WcdWKlwbMLEEyWYxUQD7_QIqLBnB6_jKw6uPSjOvzF1DQneUvC2Zr_POIQ/exec';
+    const RECORDER_APP_URL = 'https://YOUR_GITHUB_USERNAME.github.io/meeting-recorder/';
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZDd23UFQcXfjCOE3_mbCE9YyYTst8dU0",
+      authDomain: "meeting-rec-and-report.firebaseapp.com",
+      projectId: "meeting-rec-and-report"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let rawBookings = [];
+    let dateSortOrder = 'upcoming';
+    let currentFontSize = 16;
+    let currentViewDate = new Date();
+    let currentActiveTab = 'list';
+    const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+    const roomsList = ['ห้องประชุม 1', 'ห้องประชุม 2', 'ห้องประชุม 3', 'นอกสถานที่'];
+    const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    window.onload = function() {
+      const todayStr = formatDateKey(new Date());
+      document.getElementById('timelineDateInput').value = todayStr;
+      fetchBookings();
+    };
+
+    function changeFontSize(delta) {
+      currentFontSize = Math.min(22, Math.max(13, currentFontSize + delta));
+      document.documentElement.style.fontSize = currentFontSize + 'px';
+    }
+    function resetFontSize() {
+      currentFontSize = 16;
+      document.documentElement.style.fontSize = '16px';
+    }
+
+    async function fetchBookings() {
+      const loadingEl = document.getElementById('loading');
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (rawBookings.length === 0) loadingEl.classList.remove('hidden');
+      refreshIcon.classList.add('fa-spin');
+      try {
+        if (GAS_WEB_APP_URL.includes('YOUR_GAS')) throw new Error('กรุณาระบุ URL ของ GAS');
+        const response = await fetch(GAS_WEB_APP_URL);
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        const data = await response.json();
+        rawBookings = Array.isArray(data) ? data : [];
+        loadingEl.classList.add('hidden');
+        buildDeptFilter();
+        switchView(currentActiveTab);
+      } catch (err) {
+        loadingEl.innerHTML = `<div class="text-rose-600 p-4 max-w-lg mx-auto"><p class="font-bold">เชื่อมต่อไม่ได้</p><p class="text-sm">${err.message}</p></div>`;
+      } finally {
+        refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function switchView(view) {
+      currentActiveTab = view;
+      ['list', 'cal', 'timeline'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        document.getElementById(`btn-${v}`).classList.remove('tab-active', 'text-white');
+        document.getElementById(`btn-${v}`).classList.add('text-slate-600');
+      });
+      document.getElementById(`view-${view}`).classList.remove('hidden');
+      document.getElementById(`btn-${view}`).classList.add('tab-active', 'text-white');
+      document.getElementById(`btn-${view}`).classList.remove('text-slate-600');
+      if (view === 'list') renderList();
+      if (view === 'cal') renderCalendar();
+      if (view === 'timeline') renderTimeline();
+    }
+    function filterData() { switchView(currentActiveTab); }
+    function toggleDateSort() {
+      dateSortOrder = dateSortOrder === 'upcoming' ? 'asc' : dateSortOrder === 'asc' ? 'desc' : 'upcoming';
+      renderList();
+    }
+
+    function getFilteredEvents() {
+      const text = document.getElementById('searchInput').value.toLowerCase();
+      const room = document.getElementById('filterRoom').value;
+      const time = document.getElementById('filterTime').value;
+      const dept = document.getElementById('filterDept').value;
+      const type = document.getElementById('filterType').value;
+      return rawBookings.filter(b => {
+        const matchText = b.title.toLowerCase().includes(text) || b.room.toLowerCase().includes(text) || b.creator.toLowerCase().includes(text);
+        let matchTime = true;
+        if (time === 'morning') matchTime = b.startHour < 12;
+        if (time === 'afternoon') matchTime = b.startHour >= 12;
+        return matchText && (!room || b.room === room) && (!dept || b.creator === dept) && (!type || b.type === type) && matchTime;
+      });
+    }
+
+    function renderList() {
+      let data = getFilteredEvents();
+      const nowTime = new Date().getTime();
+      if (dateSortOrder === 'upcoming') {
+        const upcoming = data.filter(item => (item.rawEnd || item.rawStart) >= nowTime).sort((a, b) => a.rawStart - b.rawStart);
+        const past = data.filter(item => (item.rawEnd || item.rawStart) < nowTime).sort((a, b) => b.rawStart - a.rawStart);
+        data = [...upcoming, ...past];
+      } else {
+        data.sort((a, b) => dateSortOrder === 'asc' ? a.rawStart - b.rawStart : b.rawStart - a.rawStart);
+      }
+
+      const tbody = document.getElementById('listTableBody');
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">ไม่พบข้อมูลการจองห้องประชุม</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map((item, idx) => {
+        const isAllDayEvent = item.isAllDay || item.startTime === 'ตลอดวัน';
+        const timeDisplay = isAllDayEvent ? `<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-semibold">ตลอดวัน</span>` : `${item.startTime} - ${item.endTime}`;
+        const isPast = (item.rawEnd || item.rawStart) < nowTime;
+
+        return `
+        <tr onclick="openEventDetail('${item.id}')" class="cursor-pointer ${idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfe]'} ${isPast ? 'opacity-65' : ''} hover:bg-sky-50 transition text-sm">
+          <td class="py-3 px-4 text-center font-medium text-slate-600 whitespace-nowrap">${item.displayDate}</td>
+          <td class="py-3 px-4 text-center text-slate-700 whitespace-nowrap font-medium">${timeDisplay}</td>
+          <td class="py-3 px-4 font-semibold text-slate-800">${item.room}</td>
+          <td class="py-3 px-4 text-slate-800 font-medium">${item.title}</td>
+          <td class="py-3 px-4 text-slate-600">${item.creator}</td>
+          <td class="py-3 px-4 text-center"><span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">${item.type}</span></td>
+        </tr>
+      `}).join('');
+    }
+
+    function renderCalendar() {
+      const year = currentViewDate.getFullYear();
+      const month = currentViewDate.getMonth();
+      document.getElementById('calendarMonthTitle').innerText = `${thaiMonths[month]} ${year + 543}`;
+      const firstDay = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const data = getFilteredEvents();
+      const grid = document.getElementById('calendarDaysGrid');
+      grid.innerHTML = '';
+      for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="bg-slate-50 min-h-[95px] p-1.5 border-t border-slate-200 opacity-40"></div>`;
+
+      for (let d = 1; d <= totalDays; d++) {
+        const dStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        const dayEvents = data.filter(e => e.dateKey === dStr);
+        let eventBadges = dayEvents.slice(0, 3).map(e => {
+          const shortTime = e.isAllDay || e.startTime === 'ตลอดวัน' ? 'ตลอดวัน' : e.startTime;
+          return `
+          <div onclick="openEventDetail('${e.id}')" class="cursor-pointer bg-sky-100 text-sky-950 border-l-2 border-sky-600 p-1 rounded text-xs font-medium truncate mb-1 shadow-sm hover:brightness-95 transition" title="${shortTime} ${e.room} - ${e.title}">
+            <span class="font-bold text-sky-700">${shortTime}</span> ${e.room}
+          </div>
+        `}).join('');
+        if (dayEvents.length > 3) eventBadges += `<div class="text-[10px] text-sky-700 font-bold text-center">+${dayEvents.length - 3} รายการ</div>`;
+        grid.innerHTML += `<div class="bg-white min-h-[95px] p-1.5 border-t border-slate-200 flex flex-col justify-between hover:bg-slate-50"><div class="font-bold text-slate-700 mb-1">${d}</div><div class="flex-1">${eventBadges}</div></div>`;
+      }
+    }
+    function prevMonth() { currentViewDate.setMonth(currentViewDate.getMonth() - 1); renderCalendar(); }
+    function nextMonth() { currentViewDate.setMonth(currentViewDate.getMonth() + 1); renderCalendar(); }
+    function currentMonthView() { currentViewDate = new Date(); renderCalendar(); }
+
+    function renderTimeline() {
+      const selectedDate = document.getElementById('timelineDateInput').value;
+      const dObj = new Date(selectedDate);
+      document.getElementById('timelineSelectedDateText').innerText = `วัน${getDayName(dObj.getDay())}ที่ ${dObj.getDate()} ${thaiMonths[dObj.getMonth()]} ${dObj.getFullYear() + 543}`;
+      renderDayPills(dObj);
+      const dayEvents = getFilteredEvents().filter(e => e.dateKey === selectedDate);
+      const rowsContainer = document.getElementById('timelineRows');
+      rowsContainer.innerHTML = '';
+      const startBaseHour = 7, totalHours = 11;
+
+      roomsList.forEach(roomName => {
+        const eventsInRoom = dayEvents.filter(e => e.room === roomName);
+        let blockHtml = eventsInRoom.map(ev => {
+          const isAllDay = ev.isAllDay || ev.startTime === 'ตลอดวัน';
+          const sHour = isAllDay ? 7 : Math.max(startBaseHour, Math.min(18, ev.startHour));
+          const eHour = isAllDay ? 18 : Math.max(startBaseHour, Math.min(18, ev.endHour));
+          const leftPercent = ((sHour - startBaseHour) / totalHours) * 100;
+          const widthPercent = Math.max(1.5, ((eHour - sHour) / totalHours) * 100);
+          return `
+            <div onclick="openEventDetail('${ev.id}')" class="cursor-pointer absolute top-1.5 bottom-1.5 bg-[#00a8e8] text-white rounded-md px-2.5 text-xs flex items-center shadow border border-sky-600 truncate transition hover:brightness-105"
+                 style="left: ${leftPercent}%; width: ${widthPercent}%; z-index: 10;" title="${ev.title}">
+              <span class="truncate font-semibold drop-shadow-sm tracking-wide text-xs">${ev.title}</span>
+            </div>`;
+        }).join('');
+        rowsContainer.innerHTML += `
+          <div class="flex items-center text-xs min-h-[52px] hover:bg-slate-50 transition">
+            <div class="w-36 pl-3 font-bold text-slate-800 flex-shrink-0">${roomName}</div>
+            <div class="flex-1 relative h-10 grid grid-cols-11 divide-x divide-slate-200 border-l border-slate-200">
+              ${'<div class="h-full"></div>'.repeat(11)}${blockHtml}
+            </div>
+          </div>`;
+      });
+    }
+
+    function renderDayPills(baseDate) {
+      const container = document.getElementById('timelineDayPills');
+      container.innerHTML = '';
+      const dayLetters = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+      for (let offset = -3; offset <= 3; offset++) {
+        let temp = new Date(baseDate);
+        temp.setDate(temp.getDate() + offset);
+        const tempKey = formatDateKey(temp);
+        const count = rawBookings.filter(b => b.dateKey === tempKey).length;
+        const isSelected = tempKey === formatDateKey(baseDate);
+        container.innerHTML += `
+          <button onclick="selectTimelineDate('${tempKey}')" 
+            class="flex-shrink-0 flex flex-col items-center justify-center w-12 py-1.5 rounded-lg border text-xs ${isSelected ? 'bg-sky-600 text-white border-sky-600 shadow-md font-semibold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}">
+            <span>${dayLetters[temp.getDay()]}</span><span class="font-bold text-sm my-0.5">${temp.getDate()}</span><span class="text-[10px] opacity-75">${count}</span>
+          </button>`;
+      }
+    }
+    function selectTimelineDate(dateKey) { document.getElementById('timelineDateInput').value = dateKey; renderTimeline(); }
+    function buildDeptFilter() {
+      const depts = [...new Set(rawBookings.map(b => b.creator))].filter(Boolean);
+      const select = document.getElementById('filterDept');
+      select.innerHTML = '<option value="">ทุกหน่วยงาน/ผู้จอง</option>';
+      depts.forEach(d => select.innerHTML += `<option value="${d}">${d}</option>`);
+    }
+    function formatDateKey(d) { return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`; }
+    function getDayName(idx) { return ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][idx]; }
+
+    let unsubscribeMeetingStatus = null;
+
+    function openEventDetail(id) {
+      const ev = rawBookings.find(b => b.id === id);
+      if (!ev) return;
+      document.getElementById('modalTitle').innerText = ev.title;
+      document.getElementById('modalCreator').innerText = 'จองโดย: ' + ev.creator;
+      document.getElementById('modalDate').innerText = ev.displayDate;
+      document.getElementById('modalTime').innerText = (ev.isAllDay || ev.startTime === 'ตลอดวัน') ? 'ตลอดวัน' : `${ev.startTime} - ${ev.endTime}`;
+      document.getElementById('modalRoom').innerText = ev.room;
+      
+      checkMeetingStatus(ev);
+      document.getElementById('eventDetailModal').classList.remove('hidden');
+    }
+
+    function closeEventDetail() {
+      if(unsubscribeMeetingStatus) unsubscribeMeetingStatus(); 
+      document.getElementById('eventDetailModal').classList.add('hidden');
+    }
+
+    function checkMeetingStatus(eventData) {
+      const actionBox = document.getElementById('meeting-ai-action-box');
+      actionBox.innerHTML = `<div class="flex items-center justify-center py-4"><i class="fa-solid fa-spinner fa-spin text-slate-400 text-xl mr-2"></i><span class="text-sm text-slate-500">กำลังตรวจสอบสถานะรายงานการประชุม...</span></div>`;
+
+      const todayStr = new Date().toLocaleDateString('en-CA'); 
+      const eventDateStr = new Date(eventData.rawStart).toLocaleDateString('en-CA');
+      const isToday = (todayStr === eventDateStr);
+
+      unsubscribeMeetingStatus = db.collection('meetings').doc(eventData.id).onSnapshot((doc) => {
+        const isStartedOrHasReport = doc.exists; 
+        const data = doc.exists ? doc.data() : null;
+        let html = '';
+
+        if (isStartedOrHasReport) {
+          const isLive = data.agendas && data.agendas.some(a => a.status === 'recording' || a.status === 'processing');
+          html += `
+            <div class="${isLive ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'} border rounded-xl p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between">
+                ${isLive 
+                  ? `<span class="text-sm font-bold text-red-700 flex items-center gap-2"><span class="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span> กำลังบันทึกการประชุมสด (Live)</span>`
+                  : `<span class="text-sm font-bold text-emerald-800"><i class="fa-solid fa-check-circle mr-1"></i> มีบันทึกและสรุปรายงานการประชุมแล้ว</span>`
+                }
+                ${data.docUrl ? `<a href="${data.docUrl}" target="_blank" class="text-xs bg-white border border-emerald-300 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-100 font-semibold shadow-sm transition"><i class="fa-solid fa-file-word mr-1"></i> เปิด Google Docs</a>` : ''}
+              </div>
+              <div class="flex gap-2">
+                <button onclick="openReportViewer('${eventData.id}')" class="flex-1 ${isLive ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white text-sm font-medium py-2 px-3 rounded-lg transition shadow-md flex justify-center items-center gap-1.5">
+                  ${isLive ? '<i class="fa-solid fa-mobile-screen"></i> ติดตามสรุปวาระสด' : '<i class="fa-solid fa-file-lines"></i> อ่านรายงานสรุป'}
+                </button>
+                ${isDesktop && isToday ? `
+                  <button onclick="openRecorderWorkspace('${eventData.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition shadow-md flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-microphone-lines"></i> จัดการบันทึกเสียง
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        } else if (isToday) {
+          if (isDesktop) {
+            const safeTitle = (eventData.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            html += `
+              <div id="start-record-step1" class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                <p class="text-xs text-indigo-700 mb-3 font-medium"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> พร้อมสำหรับการบันทึกเสียงและสรุปรายงานด้วย AI</p>
+                <button onclick="showRecordConfirmation()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-microphone"></i> เริ่มบันทึกเสียงการประชุม
+                </button>
+              </div>
+
+              <div id="start-record-step2" class="hidden bg-amber-50 border-2 border-amber-400 rounded-xl p-4 transition-all">
+                <p class="text-sm font-bold text-amber-900 mb-1"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i> ยืนยันการเปิดห้องบันทึกการประชุม?</p>
+                <p class="text-xs text-amber-800 mb-4 leading-relaxed">
+                  หัวข้อ: <span class="font-bold underline">${safeTitle}</span><br>
+                  (เมื่อกดยืนยัน หน้าจอของทุกคนที่เข้าร่วมผ่านโทรศัพท์จะเปลี่ยนเป็นโหมดรายงานสดทันที)
+                </p>
+                <div class="flex gap-2">
+                  <button onclick="cancelRecordConfirmation()" class="flex-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold py-2 px-3 rounded-lg transition">ยกเลิก</button>
+                  <button onclick="openRecorderWorkspace('${eventData.id}')" class="flex-[1.5] bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition">✅ ยืนยัน เริ่มเลย</button>
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                <i class="fa-solid fa-hourglass-half text-slate-400 text-lg mb-2"></i>
+                <p class="text-xs text-slate-500 font-medium">รอผู้บันทึกเริ่มการประชุมผ่านเครื่อง Desktop<br>(ปุ่มติดตามรายงานสดจะปรากฏขึ้นที่นี่อัตโนมัติเมื่อเริ่มประชุม)</p>
+              </div>
+            `;
+          }
+        } else {
+          html = `<div class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center text-xs text-slate-400 italic">ไม่พบรายงานการประชุมสำหรับรายการนี้</div>`;
+        }
+        actionBox.innerHTML = html;
+      });
+    }
+
+    function showRecordConfirmation() {
+      document.getElementById('start-record-step1').classList.add('hidden');
+      document.getElementById('start-record-step2').classList.remove('hidden');
+    }
+    function cancelRecordConfirmation() {
+      document.getElementById('start-record-step2').classList.add('hidden');
+      document.getElementById('start-record-step1').classList.remove('hidden');
+    }
+
+    function openRecorderWorkspace(eventId) {
+      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=record`;
+      window.open(url, '_blank');
+      closeEventDetail();
+    }
+
+    function openReportViewer(eventId) {
+      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=view`;
+      if (typeof liff !== 'undefined' && liff.isInClient()) {
+        window.location.href = url;
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+    async function submitOffsiteMeeting() {
+      const title = document.getElementById('offsiteTitle').value.trim();
+      const location = document.getElementById('offsiteLocation').value.trim();
+      if (!title) return alert("กรุณากรอกหัวข้อการประชุมครับ");
+
+      const btn = document.getElementById('btnCreateOffsite');
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังลงคิว...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'createOffsiteEvent', title, location })
+        }).then(r => r.json());
+
+        if (res.status === 'success') {
+          document.getElementById('offsiteModal').classList.add('hidden');
+          await fetchBookings();
+          openRecorderWorkspace(res.eventId);
+          document.getElementById('offsiteTitle').value = '';
+        } else {
+          alert("เกิดข้อผิดพลาด: " + res.message);
+        }
+      } catch (e) {
+        alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อสร้างคิวได้");
+      } finally {
+        btn.innerText = "สร้างและเริ่มบันทึกเสียง";
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
