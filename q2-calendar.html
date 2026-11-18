@@ -238,10 +238,21 @@
       refreshIcon.classList.add('fa-spin');
       try {
         if (GAS_WEB_APP_URL.includes('YOUR_GAS')) throw new Error('กรุณาระบุ URL ของ GAS');
-        const response = await fetch(GAS_WEB_APP_URL);
+        
+        // เพิ่ม redirect: 'follow' เพื่อจัดการการเปลี่ยนเส้นทางของ Google
+        const response = await fetch(GAS_WEB_APP_URL, { method: 'GET', redirect: 'follow' });
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-        const data = await response.json();
-        rawBookings = Array.isArray(data) ? data : [];
+        
+        // รับค่าเป็น Text ก่อนเพื่อป้องกัน Error กรณี GAS ส่ง HTML กลับมาแทน JSON
+        const textData = await response.text();
+        try {
+          const data = JSON.parse(textData);
+          rawBookings = Array.isArray(data) ? data : [];
+        } catch (e) {
+          console.error("Raw response:", textData);
+          throw new Error("ข้อมูลที่ได้รับไม่ใช่ JSON โปรดตรวจสอบสิทธิ์การเข้าถึง Web App (Who has access ต้องเป็น Anyone)");
+        }
+
         loadingEl.classList.add('hidden');
         buildDeptFilter();
         switchView(currentActiveTab);
@@ -539,10 +550,24 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch(GAS_WEB_APP_URL, {
+        const response = await fetch(GAS_WEB_APP_URL, {
           method: 'POST',
-          body: JSON.stringify({ action: 'createOffsiteEvent', title, location })
-        }).then(r => r.json());
+          headers: { 
+            // ตั้งค่า Content-Type เป็น text/plain เพื่อหลีกเลี่ยง CORS Preflight Error จากเบราว์เซอร์
+            'Content-Type': 'text/plain;charset=utf-8' 
+          },
+          body: JSON.stringify({ action: 'createOffsiteEvent', title, location }),
+          redirect: 'follow'
+        });
+
+        const textData = await response.text();
+        let res;
+        try {
+           res = JSON.parse(textData);
+        } catch(e) {
+           console.error("Raw response:", textData);
+           throw new Error("เซิร์ฟเวอร์ตอบกลับมาไม่ถูกต้อง (ไม่ใช่ JSON)");
+        }
 
         if (res.status === 'success') {
           document.getElementById('offsiteModal').classList.add('hidden');
@@ -553,7 +578,8 @@
           alert("เกิดข้อผิดพลาด: " + res.message);
         }
       } catch (e) {
-        alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อสร้างคิวได้");
+        console.error(e);
+        alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + e.message);
       } finally {
         btn.innerText = "สร้างและเริ่มบันทึกเสียง";
         btn.disabled = false;
