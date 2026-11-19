@@ -20,12 +20,20 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    /* จัดหน้ากระดาษให้สวยงามเมื่อกด พิมพ์ / บันทึกเป็น PDF */
+    @media print {
+      body { background-color: #ffffff !important; }
+      .no-print { display: none !important; }
+      main { padding: 0 !important; }
+      #reportPreviewView { display: block !important; max-width: 100% !important; }
+      .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
   <!-- Toast แจ้งเตือน (แทน alert) -->
-  <div id="toastContainer" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
+  <div id="toastContainer" class="no-print fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
   <!-- หน้าจอแจ้งเตือนกรณีเข้าเว็บโดยไม่มี eventId -->
   <div id="invalidAccessScreen" class="hidden min-h-screen flex items-center justify-center p-4">
@@ -45,7 +53,7 @@
   <div id="mainWorkspace" class="hidden flex-1 flex flex-col min-h-screen">
 
     <!-- Top Navigation Bar -->
-    <header class="bg-white border-b border-slate-200 px-4 lg:px-6 h-16 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+    <header class="no-print bg-white border-b border-slate-200 px-4 lg:px-6 h-16 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div class="flex items-center gap-3 min-w-0">
         <!-- ปุ่มเปิดเมนูบนมือถือ -->
         <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
@@ -97,7 +105,7 @@
     <div class="flex-1 flex relative">
 
       <!-- Left Sidebar -->
-      <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-60 bg-white border-r border-slate-200 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-200 pt-16 lg:pt-0">
+      <aside id="sidebar" class="no-print fixed lg:static inset-y-0 left-0 z-40 w-60 bg-white border-r border-slate-200 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-200 pt-16 lg:pt-0">
         <div class="p-4 space-y-6">
           <div>
             <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-1">WORKSPACE CONTROL</p>
@@ -117,6 +125,9 @@
             <button onclick="switchSection('tasks')" id="nav-tasks" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
               <i class="fa-regular fa-circle-check w-4 text-center"></i> Action Items
               <span id="navTaskCount" class="ml-auto bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+            </button>
+            <button onclick="switchSection('report')" id="nav-report" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+              <i class="fa-solid fa-file-lines w-4 text-center"></i> รายงานสรุปเอกสาร
             </button>
             <button onclick="openArchiveLink()" id="nav-archive" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
               <i class="fa-solid fa-clock-rotate-left w-4 text-center"></i> ปฏิทิน / คลังรายงาน
@@ -154,7 +165,7 @@
         <div class="max-w-[1400px] mx-auto space-y-5">
 
           <!-- Top Banner: Active Agenda & Timers -->
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+          <div id="studioTopBanner" class="no-print bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
             <div class="space-y-1.5 min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
                 <span id="bannerLiveBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
@@ -389,6 +400,194 @@
             <div id="allTasksList" class="space-y-2.5"></div>
           </section>
 
+          <!-- มุมมองรายงานสรุปเอกสารฉบับสมบูรณ์ (Executive Report Preview) -->
+          <section id="reportPreviewView" class="hidden space-y-5">
+
+            <!-- แถบควบคุมด้านบนของหน้ารายงาน (ซ่อนตอนพิมพ์) -->
+            <div class="no-print bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button onclick="switchSection('studio')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-arrow-left"></i> กลับหน้า Live Studio
+                </button>
+                <span id="reportRefBadge" class="text-xs font-mono font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">REF: -</span>
+                <span id="reportStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <i class="fa-solid fa-circle-check"></i> พร้อมตรวจสอบและส่งออก
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <button onclick="shareMeetingLink()" class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-share-nodes text-indigo-600"></i> แชร์ลิงก์รายงาน
+                </button>
+                <button onclick="exportToGoogleDocs()" class="px-3.5 py-2 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-file-word"></i> สร้าง Google Docs
+                </button>
+                <button onclick="printOfficialReport()" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-print"></i> พิมพ์ / บันทึก PDF (Official Minutes)
+                </button>
+              </div>
+            </div>
+
+            <!-- หัวเอกสารรายงานการประชุม -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-2 max-w-2xl">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-extrabold tracking-wide uppercase border border-indigo-100">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> EXECUTIVE MEETING MINUTES • AI INTELLIGENCE REPORT
+                </span>
+                <h1 id="reportMainTitle" class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">รายงานสรุปผลการประชุม</h1>
+                <p id="reportSubMeta" class="text-xs sm:text-sm text-slate-500">เรียบเรียงและสรุปสาระสำคัญอัตโนมัติด้วย Gemini 2.5 Flash พร้อมจัดเก็บไฟล์เสียงใน Google Drive</p>
+              </div>
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-1.5 min-w-[220px]">
+                <div class="flex justify-between gap-4"><span class="text-slate-500">วันที่จัดทำรายงาน:</span> <strong id="reportGeneratedAt" class="text-slate-800">-</strong></div>
+                <div class="flex justify-between gap-4"><span class="text-slate-500">สถานะเอกสาร:</span> <strong id="reportDocLinkStatus" class="text-indigo-700">ฉบับร่างตรวจสอบ</strong></div>
+                <div class="flex justify-between gap-4"><span class="text-slate-500">สถานที่ประชุม:</span> <strong id="reportRoomBadge" class="text-slate-800 truncate max-w-[140px]">-</strong></div>
+              </div>
+            </div>
+
+            <!-- การ์ดสถิติ 4 ช่อง (KPI Cards) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1.5">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>ระยะเวลาประชุมรวม</span>
+                  <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center"><i class="fa-regular fa-clock"></i></span>
+                </div>
+                <p id="kpiDuration" class="text-2xl font-extrabold font-mono text-slate-900">00:00:00</p>
+                <p id="kpiDateText" class="text-[11px] text-slate-500 truncate">-</p>
+              </div>
+
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1.5">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>ผู้เข้าร่วมประชุม</span>
+                  <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-users"></i></span>
+                </div>
+                <p class="text-2xl font-extrabold text-slate-900"><span id="kpiAttendees">0</span> <span class="text-sm font-semibold text-slate-500">ท่าน</span></p>
+                <p class="text-[11px] text-emerald-700 font-semibold">อ้างอิงจาก Google Calendar</p>
+              </div>
+
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1.5">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>ความคืบหน้าวาระ</span>
+                  <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-list-check"></i></span>
+                </div>
+                <p id="kpiAgendas" class="text-2xl font-extrabold text-slate-900">0 / 0</p>
+                <p id="kpiAgendasSub" class="text-[11px] text-slate-500">สรุปผลด้วย AI แล้ว</p>
+              </div>
+
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1.5">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>ผลลัพธ์และมติสำคัญ</span>
+                  <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-gavel"></i></span>
+                </div>
+                <p class="text-2xl font-extrabold text-indigo-700"><span id="kpiResolutions">0</span> <span class="text-xs font-bold text-slate-600">มติ</span> <span class="text-slate-300">/</span> <span id="kpiActions" class="text-slate-900">0</span> <span class="text-xs font-bold text-slate-600">Actions</span></p>
+                <p class="text-[11px] text-slate-500">รวบรวมอัตโนมัติจากทุกวาระ</p>
+              </div>
+            </div>
+
+            <!-- แถบสลับมุมมองรายงาน & ค้นหา (ซ่อนตอนพิมพ์) -->
+            <div class="no-print bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+                <button id="btnReportModeSummary" onclick="setReportViewMode('summary')" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-file-contract"></i> Executive Summary View (สรุปผู้บริหาร)
+                </button>
+                <button id="btnReportModeTranscript" onclick="setReportViewMode('transcript')" class="px-3.5 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-align-left"></i> Full Transcript View (บันทึกถอดความเต็ม)
+                </button>
+              </div>
+              <div class="relative flex-1 min-w-[200px] max-w-sm">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-2.5 text-slate-400 text-xs"></i>
+                <input type="text" id="reportSearchInput" oninput="onReportSearch(this.value)" placeholder="ค้นหาวาระ, มติ, หรือคำสำคัญในรายงาน..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 1: รายชื่อผู้เข้าร่วมประชุม -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-3.5 print-break-inside-avoid">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid fa-user-check text-indigo-600"></i> รายชื่อผู้เข้าร่วมประชุม (Meeting Attendance)
+                </h2>
+                <span id="reportAttendeeBadge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">0 ท่าน</span>
+              </div>
+              <div id="reportParticipantsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
+            </div>
+
+            <!-- ส่วนที่ 2: โครงสร้างรายงานและมติแยกตามวาระ (Agenda Breakdown) -->
+            <div class="space-y-3.5">
+              <div class="flex items-center justify-between px-1">
+                <div>
+                  <h2 class="text-base sm:text-lg font-extrabold text-slate-900">โครงสร้างรายงานและมติแยกตามวาระการประชุม (Agenda Breakdown)</h2>
+                  <p class="text-xs text-slate-500">เรียงตามลำดับวาระหลักและวาระย่อย พร้อมมติที่ประชุมและลิงก์ไฟล์เสียงอ้างอิงใน Google Drive</p>
+                </div>
+                <span id="reportAgendaCountLabel" class="text-xs font-bold text-slate-500"></span>
+              </div>
+              <div id="reportAgendaBreakdown" class="space-y-4"></div>
+            </div>
+
+            <!-- ส่วนที่ 3: มติที่ประชุมทั้งหมด (Executive Resolutions Summary) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4 print-break-inside-avoid">
+              <div class="border-b border-slate-100 pb-3">
+                <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid fa-gavel text-emerald-600"></i> มติที่ประชุมทั้งหมด (Executive Resolutions Summary)
+                </h2>
+                <p class="text-xs text-slate-500">สรุปมติสำคัญจากทุกวาระเพื่อใช้อ้างอิงและติดตามผล</p>
+              </div>
+              <div id="reportResolutionsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+            </div>
+
+            <!-- ส่วนที่ 4: รายการสิ่งที่ต้องดำเนินการต่อ (Action Items Matrix) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4 print-break-inside-avoid">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-table-list text-indigo-600"></i> รายการสิ่งที่ต้องดำเนินการต่อ (Action Items Matrix)
+                  </h2>
+                  <p class="text-xs text-slate-500">ตารางมอบหมายงาน ผู้รับผิดชอบ และกำหนดแล้วเสร็จ</p>
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                  <thead>
+                    <tr class="bg-slate-50 border-y border-slate-200 text-slate-600">
+                      <th class="py-2.5 px-3 font-bold">งานที่ต้องดำเนินการ (Action Item)</th>
+                      <th class="py-2.5 px-3 font-bold text-center w-24">วาระอ้างอิง</th>
+                      <th class="py-2.5 px-3 font-bold w-44">ผู้รับผิดชอบ (Owner)</th>
+                      <th class="py-2.5 px-3 font-bold w-36">กำหนดเสร็จ (Deadline)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportActionMatrixBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 5: ช่องลงนามรับรองรายงาน (สำหรับพิมพ์เป็นเอกสารทางการ) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5 print-break-inside-avoid">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid fa-file-signature text-indigo-600"></i> การรับรองรายงานการประชุม (Sign-off & Certification)
+                </h2>
+                <span class="text-[11px] font-semibold text-slate-500">สำหรับลงนามตรวจสอบฉบับพิมพ์</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50 space-y-8 text-center">
+                  <p class="text-xs font-bold text-slate-600">ผู้จดและจัดทำรายงานการประชุม</p>
+                  <div class="space-y-1.5">
+                    <div class="border-b border-dashed border-slate-400 w-3/4 mx-auto"></div>
+                    <p class="text-xs text-slate-500">(.................................................................)</p>
+                    <p class="text-[11px] text-slate-400">เลขานุการที่ประชุม • วันที่ ........../........../..........</p>
+                  </div>
+                </div>
+                <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50 space-y-8 text-center">
+                  <p class="text-xs font-bold text-slate-600">ผู้ตรวจสอบและรับรองรายงานการประชุม</p>
+                  <div class="space-y-1.5">
+                    <div class="border-b border-dashed border-slate-400 w-3/4 mx-auto"></div>
+                    <p class="text-xs text-slate-500">(.................................................................)</p>
+                    <p class="text-[11px] text-slate-400">ประธานที่ประชุม • วันที่ ........../........../..........</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
         </div>
       </main>
     </div>
@@ -444,11 +643,16 @@
       </div>
       <div>
         <h3 class="text-lg font-extrabold text-slate-900">ยืนยันสิ้นสุดการประชุมทั้งหมด?</h3>
-        <p class="text-xs text-slate-500 mt-1">ระบบจะรวมสรุปทุกวาระเพื่อสร้างไฟล์รายงานฉบับสมบูรณ์บน Google Docs และเปิดให้คุณตรวจสอบทันที</p>
+        <p class="text-xs text-slate-500 mt-1">คุณสามารถเปิดดูหน้ารายงานสรุปเพื่อตรวจทานและพิมพ์ PDF ก่อน หรือสั่งสร้างไฟล์ Google Docs ได้ทันที</p>
       </div>
-      <div class="flex gap-2.5 pt-2">
-        <button onclick="closeModal('endMeetingModal')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">ยกเลิก</button>
-        <button id="confirmEndBtn" onclick="confirmEndMeeting()" class="flex-[1.5] py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition">ยืนยันและสร้าง Google Docs</button>
+      <div class="flex flex-col gap-2 pt-2">
+        <button onclick="openReportFromEndModal()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-file-lines"></i> เปิดหน้ารายงานสรุปเพื่อตรวจทาน / พิมพ์ PDF ก่อน
+        </button>
+        <div class="flex gap-2">
+          <button onclick="closeModal('endMeetingModal')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">ยกเลิก</button>
+          <button id="confirmEndBtn" onclick="confirmEndMeeting()" class="flex-[1.5] py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition">สร้าง Google Docs ทันที</button>
+        </div>
       </div>
     </div>
   </div>
@@ -562,9 +766,9 @@
     let selectedAgendaId = null;     // วาระที่กำลังคลิกดูในแผง AI ด้านขวา
     let activeAiTab = 'summary';     // summary | resolutions | tasks | transcript
     let addModalType = 'main';       // main | sub
-
-    // สถานะการบันทึกเสียง
-    let mediaRecorder = null;
+    let activeSection = 'studio';    // studio | agenda | insights | tasks | report
+    let reportViewMode = 'summary';  // summary | transcript
+    let reportSearchQuery = '';
     let audioChunks = [];
     let recordingAgendaId = null;
     let isPaused = false;
@@ -857,6 +1061,7 @@
       renderAiPanel();
       renderParticipants();
       renderAllTasksView();
+      if (activeSection === 'report') renderReportPreview();
     }
 
     function updateTimerDisplays() {
@@ -1210,8 +1415,10 @@
     // สลับเมนูด้านซ้าย (Sidebar Navigation)
     // -------------------------------------------------------------------------
     function switchSection(section) {
-      ['studio', 'agenda', 'insights', 'tasks'].forEach(s => {
+      activeSection = section;
+      ['studio', 'agenda', 'insights', 'tasks', 'report'].forEach(s => {
         const btn = document.getElementById(`nav-${s}`);
+        if (!btn) return;
         if (s === section) {
           btn.className = 'nav-item-active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition';
         } else {
@@ -1219,14 +1426,24 @@
         }
       });
 
+      const topBanner = document.getElementById('studioTopBanner');
       const twoCol = document.getElementById('twoColumnLayout');
       const tasksView = document.getElementById('allTasksView');
+      const reportView = document.getElementById('reportPreviewView');
+
+      topBanner.classList.remove('hidden');
+      twoCol.classList.add('hidden');
+      tasksView.classList.add('hidden');
+      reportView.classList.add('hidden');
 
       if (section === 'tasks') {
-        twoCol.classList.add('hidden');
         tasksView.classList.remove('hidden');
+      } else if (section === 'report') {
+        topBanner.classList.add('hidden');
+        reportView.classList.remove('hidden');
+        renderReportPreview();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        tasksView.classList.add('hidden');
         twoCol.classList.remove('hidden');
         if (section === 'agenda') {
           document.getElementById('agendaTreeSection').scrollIntoView({ behavior: 'smooth' });
@@ -1235,7 +1452,213 @@
         }
       }
 
-      if (window.innerWidth < 1024) toggleMobileSidebar();
+      if (window.innerWidth < 1024 && !document.getElementById('sidebar').classList.contains('-translate-x-full')) {
+        toggleMobileSidebar();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // หน้ารายงานสรุปเอกสารฉบับสมบูรณ์ (Executive Report Preview)
+    // -------------------------------------------------------------------------
+    function setReportViewMode(mode) {
+      reportViewMode = mode;
+      const btnSum = document.getElementById('btnReportModeSummary');
+      const btnTrans = document.getElementById('btnReportModeTranscript');
+      if (mode === 'summary') {
+        btnSum.className = 'px-3.5 py-2 rounded-lg text-xs font-bold bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5';
+        btnTrans.className = 'px-3.5 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5';
+      } else {
+        btnSum.className = 'px-3.5 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5';
+        btnTrans.className = 'px-3.5 py-2 rounded-lg text-xs font-bold bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5';
+      }
+      renderReportPreview();
+    }
+
+    function onReportSearch(val) {
+      reportSearchQuery = (val || '').trim().toLowerCase();
+      renderReportPreview();
+    }
+
+    function printOfficialReport() {
+      window.print();
+    }
+
+    function openReportFromEndModal() {
+      closeModal('endMeetingModal');
+      switchSection('report');
+    }
+
+    function renderReportPreview() {
+      if (!meetingData) return;
+
+      const allNodes = getAllAgendaNodes();
+      const completedCount = allNodes.filter(n => n.status === 'done').length;
+      const dateStr = meetingData.startTime ? new Date(meetingData.startTime).toLocaleDateString('th-TH', { dateStyle: 'long' }) : '-';
+      const details = meetingData.guestDetails || (meetingData.guests || []).map(email => ({ name: email.split('@')[0], email }));
+
+      // รวบรวมมติและ Action Items ทั้งหมด
+      const allResolutions = [];
+      const allActions = [];
+      allNodes.forEach(n => {
+        (n.aiData?.resolutions || []).forEach(r => allResolutions.push({ code: n.code, title: n.title, text: r }));
+        (n.aiData?.actionItems || []).forEach(a => allActions.push({ ...a, code: n.code, agendaTitle: n.title }));
+      });
+
+      // อัปเดตหัวเอกสาร & KPI
+      document.getElementById('reportRefBadge').innerText = `REF: MTG-${(currentEventId || '000000').substring(0, 8).toUpperCase()}`;
+      document.getElementById('reportMainTitle').innerText = meetingData.title || 'รายงานสรุปผลการประชุม';
+      document.getElementById('reportGeneratedAt').innerText = new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' });
+      document.getElementById('reportRoomBadge').innerText = meetingData.room || 'ไม่ระบุ';
+      document.getElementById('reportDocLinkStatus').innerHTML = meetingData.docUrl
+        ? `<a href="${meetingData.docUrl}" target="_blank" class="text-emerald-700 underline">สร้าง Docs แล้ว ↗</a>`
+        : 'ฉบับร่างตรวจสอบ';
+
+      document.getElementById('kpiDuration').innerText = formatTime(totalSeconds);
+      document.getElementById('kpiDateText').innerText = `${dateStr} • ${meetingData.room || '-'}`;
+      document.getElementById('kpiAttendees').innerText = details.length;
+      document.getElementById('kpiAgendas').innerText = `${completedCount} / ${allNodes.length}`;
+      document.getElementById('kpiAgendasSub').innerText = `วาระหลัก ${meetingData.agendas.length} วาระ • สรุปแล้ว ${completedCount} หัวข้อ`;
+      document.getElementById('kpiResolutions').innerText = allResolutions.length;
+      document.getElementById('kpiActions').innerText = allActions.length;
+
+      // 1. ผู้เข้าร่วมประชุม
+      document.getElementById('reportAttendeeBadge').innerText = `${details.length} ท่าน`;
+      const pGrid = document.getElementById('reportParticipantsGrid');
+      const palette = ['bg-indigo-600', 'bg-emerald-600', 'bg-blue-600', 'bg-violet-600', 'bg-sky-600'];
+      pGrid.innerHTML = details.length
+        ? details.map((g, i) => `
+            <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-full ${palette[i % palette.length]} text-white text-xs font-bold flex items-center justify-center flex-shrink-0">${escapeHtml((g.name || 'U').substring(0, 2).toUpperCase())}</div>
+                <div class="min-w-0">
+                  <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(g.name)}</p>
+                  <p class="text-[10px] text-slate-500 truncate">${escapeHtml(g.email)}</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">ผู้เชิญ</span>
+            </div>`).join('')
+        : `<p class="text-xs text-slate-400 col-span-full text-center py-3">ไม่มีรายชื่อผู้รับเชิญในปฏิทิน Google Calendar</p>`;
+
+      // 2. โครงสร้างรายงานแยกตามวาระ (กรองด้วย reportSearchQuery)
+      const q = reportSearchQuery;
+      const matchesNode = (n) => {
+        if (!q) return true;
+        const blob = `${n.code} ${n.title} ${n.summary || ''} ${JSON.stringify(n.aiData || '')}`.toLowerCase();
+        return blob.includes(q);
+      };
+
+      const renderNodeReportBody = (n) => {
+        if (reportViewMode === 'transcript') {
+          const trans = n.aiData?.transcript || n.summary || '';
+          return trans
+            ? `<div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed">${escapeHtml(trans)}</div>`
+            : `<p class="text-xs text-slate-400 italic">ยังไม่มีบันทึกถอดความในวาระนี้</p>`;
+        }
+
+        const pts = n.aiData?.summaryPoints || [];
+        const ress = n.aiData?.resolutions || [];
+        let html = '';
+
+        if (pts.length > 0) {
+          html += `
+            <div class="bg-[#f8faff] border border-indigo-100 rounded-xl p-3.5 space-y-2">
+              <p class="text-[11px] font-extrabold text-indigo-700 uppercase tracking-wide">สรุปสาระสำคัญ (Key Takeaways)</p>
+              <ul class="space-y-1.5 text-xs sm:text-sm text-slate-800 list-disc pl-4">
+                ${pts.map(p => `<li>${p.topic ? `<strong>${escapeHtml(p.topic)}:</strong> ` : ''}${escapeHtml(p.content)}</li>`).join('')}
+              </ul>
+            </div>`;
+        } else if (n.summary) {
+          html += `<div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 text-xs sm:text-sm text-slate-700 whitespace-pre-line">${escapeHtml(n.summary)}</div>`;
+        }
+
+        if (ress.length > 0) {
+          html += `
+            <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 space-y-1">
+              <p class="text-[11px] font-extrabold text-emerald-800 flex items-center gap-1.5"><i class="fa-solid fa-gavel"></i> มติที่ประชุม (Official Resolution)</p>
+              ${ress.map(r => `<p class="text-xs sm:text-sm text-emerald-950 font-semibold leading-relaxed">• ${escapeHtml(r)}</p>`).join('')}
+            </div>`;
+        }
+
+        if (n.driveFileUrl) {
+          html += `
+            <div class="no-print flex items-center justify-between bg-indigo-50/60 border border-indigo-100 rounded-xl px-3.5 py-2 text-xs">
+              <span class="font-semibold text-indigo-900 flex items-center gap-2"><i class="fa-solid fa-volume-high text-indigo-600"></i> ไฟล์เสียงบันทึกต้นฉบับ (Google Drive) ${n.durationSec ? `• ${formatTime(n.durationSec)}` : ''}</span>
+              <a href="${n.driveFileUrl}" target="_blank" class="font-bold text-indigo-700 hover:underline">เปิดฟังเสียง ↗</a>
+            </div>`;
+        }
+
+        return html || `<p class="text-xs text-slate-400 italic">- ยังไม่มีบันทึกสรุปในวาระนี้ -</p>`;
+      };
+
+      const totalSubs = meetingData.agendas.reduce((s, p) => s + (p.subAgendas?.length || 0), 0);
+      document.getElementById('reportAgendaCountLabel').innerText = `${meetingData.agendas.length} วาระหลัก • ${totalSubs} วาระย่อย`;
+
+      const breakdownEl = document.getElementById('reportAgendaBreakdown');
+      const filteredParents = meetingData.agendas.filter(p => matchesNode(p) || (p.subAgendas || []).some(matchesNode));
+
+      breakdownEl.innerHTML = filteredParents.length
+        ? filteredParents.map(parent => {
+            const subs = (parent.subAgendas || []).filter(s => !q || matchesNode(s) || matchesNode(parent));
+            return `
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3.5 print-break-inside-avoid">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div class="flex items-center gap-2.5">
+                    <span class="px-2.5 py-1 rounded-lg bg-indigo-700 text-white text-xs font-extrabold">วาระที่ ${escapeHtml(parent.code)}</span>
+                    <h3 class="text-sm sm:text-base font-extrabold text-slate-900">${escapeHtml(parent.title)}</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    ${parent.durationSec ? `<span class="text-xs font-mono text-slate-500">${formatTime(parent.durationSec)}</span>` : ''}
+                    ${getStatusPillHtml(parent.status)}
+                  </div>
+                </div>
+
+                ${(parent.aiData || parent.summary || !subs.length) ? `<div class="space-y-2.5">${renderNodeReportBody(parent)}</div>` : ''}
+
+                ${subs.length ? `
+                  <div class="pl-3 sm:pl-5 border-l-2 border-indigo-200 space-y-3 pt-1">
+                    ${subs.map(sub => `
+                      <div class="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-2.5 print-break-inside-avoid">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                          <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-xs font-extrabold">${escapeHtml(sub.code)}</span>
+                            <h4 class="text-sm font-bold text-slate-900">${escapeHtml(sub.title)}</h4>
+                          </div>
+                          ${getStatusPillHtml(sub.status)}
+                        </div>
+                        <div class="space-y-2">${renderNodeReportBody(sub)}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>`;
+          }).join('')
+        : `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-sm text-slate-400">ไม่พบวาระที่ตรงกับคำค้นหา</div>`;
+
+      // 3. การ์ดรวมมติที่ประชุมทั้งหมด
+      const resGrid = document.getElementById('reportResolutionsGrid');
+      resGrid.innerHTML = allResolutions.length
+        ? allResolutions.map((r, idx) => `
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 flex flex-col justify-between gap-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-mono font-bold text-emerald-800">RES-${String(idx + 1).padStart(2, '0')}</span>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">วาระที่ ${escapeHtml(r.code)}</span>
+              </div>
+              <p class="text-xs sm:text-sm font-bold text-slate-900 leading-relaxed">${escapeHtml(r.text)}</p>
+              <p class="text-[11px] text-slate-500 truncate border-t border-emerald-100 pt-2">${escapeHtml(r.title)}</p>
+            </div>`).join('')
+        : `<p class="text-xs text-slate-400 col-span-full text-center py-4">ยังไม่มีมติที่ประชุมจากการสรุปของ AI</p>`;
+
+      // 4. ตาราง Action Items Matrix
+      const matrixBody = document.getElementById('reportActionMatrixBody');
+      matrixBody.innerHTML = allActions.length
+        ? allActions.map(a => `
+            <tr class="hover:bg-slate-50">
+              <td class="py-3 px-3 font-semibold text-slate-900">${escapeHtml(a.task)}</td>
+              <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-xs">${escapeHtml(a.code)}</span></td>
+              <td class="py-3 px-3 text-slate-700 font-medium">${escapeHtml(a.owner || 'ไม่ระบุ')}</td>
+              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold text-xs">${escapeHtml(a.deadline || 'ตามแผนงาน')}</span></td>
+            </tr>`).join('')
+        : `<tr><td colspan="4" class="py-6 text-center text-xs text-slate-400">ยังไม่มีรายการงานที่ต้องดำเนินการต่อ</td></tr>`;
     }
 
     function openArchiveLink() {
