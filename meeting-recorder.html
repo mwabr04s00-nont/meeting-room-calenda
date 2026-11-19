@@ -759,6 +759,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentEventId = urlParams.get('eventId');
     const urlMode = urlParams.get('mode');
+    const urlRoom = urlParams.get('room');
 
     // สถานะหลักของระบบ
     let isRecorderMode = false;
@@ -964,13 +965,42 @@
 
             if (res.status !== 'success') throw new Error(res.message || 'ไม่พบข้อมูลการประชุม');
 
+            const resolvedRoom = (res.meeting.room && res.meeting.room !== 'ไม่ระบุห้องประชุม')
+              ? res.meeting.room
+              : (urlRoom || 'ไม่ระบุห้องประชุม');
+
             const initialData = {
               ...res.meeting,
+              room: resolvedRoom,
               agendas: normalizeAgendas([]),
               totalDurationSec: 0,
               folderUrl: ''
             };
             await docRef.set(initialData);
+          }
+        } else {
+          // กรณีข้อมูลเดิมใน Firestore เคยบันทึกไว้ว่า "ไม่ระบุห้องประชุม" ให้ซ่อมชื่อห้องให้อัตโนมัติ
+          const existing = docSnap.data();
+          if (!existing.room || existing.room === 'ไม่ระบุห้องประชุม') {
+            if (urlRoom) {
+              await docRef.update({ room: urlRoom });
+            } else if (isRecorderMode) {
+              try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ action: 'getMeetingInfo', eventId: currentEventId }),
+                  redirect: 'follow'
+                });
+                const res = JSON.parse(await response.text());
+                if (res.status === 'success' && res.meeting?.room && res.meeting.room !== 'ไม่ระบุห้องประชุม') {
+                  await docRef.update({
+                    room: res.meeting.room,
+                    endTime: res.meeting.endTime || existing.endTime || ''
+                  });
+                }
+              } catch (e) {}
+            }
           }
         }
 
@@ -1015,9 +1045,21 @@
 
       // Topbar & Sidebar Meta
       document.getElementById('topMeetingTitle').innerText = meetingData.title || '(ไม่ระบุหัวข้อ)';
-      document.getElementById('sidebarRoomName').innerText = meetingData.room || 'ไม่ระบุห้องประชุม';
+      const displayRoom = (meetingData.room && meetingData.room !== 'ไม่ระบุห้องประชุม')
+        ? meetingData.room
+        : (urlRoom || 'ไม่ระบุห้องประชุม');
+      document.getElementById('sidebarRoomName').innerText = displayRoom;
+
       const dateStr = meetingData.startTime ? new Date(meetingData.startTime).toLocaleDateString('th-TH', { dateStyle: 'long' }) : '-';
-      document.getElementById('bannerDateMeta').innerText = `📍 ${meetingData.room || 'ไม่ระบุ'} • 📅 ${dateStr}`;
+      let timeRangeStr = '';
+      if (meetingData.isAllDay) {
+        timeRangeStr = ' • 🕒 ตลอดวัน';
+      } else if (meetingData.startTime && meetingData.endTime) {
+        const sTime = new Date(meetingData.startTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        const eTime = new Date(meetingData.endTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        timeRangeStr = ` • 🕒 ${sTime} - ${eTime} น.`;
+      }
+      document.getElementById('bannerDateMeta').innerText = `📍 ${displayRoom} • 📅 ${dateStr}${timeRangeStr}`;
 
       // สถานะ Live
       const allNodes = getAllAgendaNodes();
