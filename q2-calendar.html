@@ -579,13 +579,17 @@
     }
 
     function openRecorderWorkspace(eventId) {
-      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=record`;
+      const ev = rawBookings.find(b => b.id === eventId);
+      const roomParam = ev && ev.room ? `&room=${encodeURIComponent(ev.room)}` : '';
+      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=record${roomParam}`;
       window.open(url, '_blank');
       closeEventDetail();
     }
 
     function openReportViewer(eventId) {
-      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=view`;
+      const ev = rawBookings.find(b => b.id === eventId);
+      const roomParam = ev && ev.room ? `&room=${encodeURIComponent(ev.room)}` : '';
+      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=view${roomParam}`;
       if (typeof liff !== 'undefined' && liff.isInClient()) {
         window.location.href = url;
       } else {
