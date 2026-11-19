@@ -4,15 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบจองห้องประชุม - กปน.สสน.</title>
-  
+
   <!-- LINE Seed Sans TH & Prompt Fallback -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  
+
+  <!-- Firebase Firestore SDK (สำหรับติดตามสถานะประชุมสดและรายงาน AI) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
   <style>
     @font-face {
       font-family: 'LINESeedSansTH';
@@ -45,16 +50,16 @@
       --card-radius: 20px;
     }
 
-    * { 
+    * {
       font-family: 'LINESeedSansTH', 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
-      box-sizing: border-box; 
+      box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
 
-    body { 
+    body {
       background: linear-gradient(180deg, #F0FDF4 0%, #F8FAFC 240px, #F1F5F9 100%);
-      margin: 0; 
-      padding: 16px 14px 40px; 
+      margin: 0;
+      padding: 16px 14px 44px;
       color: var(--slate-800);
       min-height: 100vh;
     }
@@ -64,10 +69,41 @@
       margin: 0 auto;
     }
 
+    /* Toast แจ้งเตือน (แทน alert) */
+    .toast-box {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      width: calc(100% - 32px);
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast-item {
+      padding: 12px 16px;
+      border-radius: 14px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: toastUp 0.2s ease-out;
+    }
+    @keyframes toastUp {
+      from { transform: translateY(14px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
     /* Header */
-    .header-container { 
-      text-align: center; 
-      margin-bottom: 18px; 
+    .header-container {
+      text-align: center;
+      margin-bottom: 18px;
       padding-top: 8px;
     }
     .brand-tag {
@@ -85,46 +121,125 @@
       border: 1px solid rgba(6, 199, 85, 0.2);
       margin-bottom: 8px;
     }
-    .header-title { 
-      font-size: 23px; 
-      font-weight: 700; 
-      color: var(--slate-900); 
-      margin: 0; 
+    .header-title {
+      font-size: 23px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin: 0;
       letter-spacing: -0.3px;
     }
-    .header-subtitle { 
-      font-size: 14px; 
-      font-weight: 400; 
-      color: var(--slate-500); 
-      margin-top: 3px; 
+    .header-subtitle {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--slate-500);
+      margin-top: 3px;
     }
-    
+
+    /* แถบทางลัด Live Now (แสดงอัตโนมัติเมื่อมีการประชุมกำลังอัดเสียงสด) */
+    .live-banner-wrap {
+      display: none;
+      margin-bottom: 16px;
+    }
+    .live-banner-card {
+      background: linear-gradient(135deg, #FEF2F2 0%, #FFF1F2 100%);
+      border: 1.5px solid #FECACA;
+      border-radius: 18px;
+      padding: 14px 15px;
+      box-shadow: 0 6px 18px rgba(220, 38, 38, 0.1);
+    }
+    .live-banner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #DC2626;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      animation: livePulse 1.2s infinite;
+    }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.8); }
+    }
+    .live-item-row {
+      background: #FFFFFF;
+      border: 1px solid #FEE2E2;
+      border-radius: 13px;
+      padding: 11px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .live-item-info {
+      min-width: 0;
+      flex: 1;
+    }
+    .live-item-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--slate-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .live-item-meta {
+      font-size: 11.5px;
+      color: var(--slate-500);
+      margin-top: 2px;
+    }
+    .btn-live-open {
+      background: #DC2626;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(220, 38, 38, 0.25);
+    }
+
     /* กล่องแสดงโปรไฟล์ LINE & ข้อความแนะนำ */
-    .profile-card { 
-      display: none; 
-      background: #FFFFFF; 
-      padding: 12px 14px; 
-      border-radius: 16px; 
+    .profile-card {
+      display: none;
+      background: #FFFFFF;
+      padding: 12px 14px;
+      border-radius: 16px;
       margin: 14px 0 0;
-      border: 1px solid rgba(6, 199, 85, 0.22); 
+      border: 1px solid rgba(6, 199, 85, 0.22);
       box-shadow: 0 4px 14px rgba(6, 199, 85, 0.08);
       text-align: left;
     }
-    .profile-info { 
-      display: flex; 
-      align-items: center; 
-      gap: 10px; 
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       padding-bottom: 8px;
       border-bottom: 1px dashed var(--slate-200);
     }
-    .profile-avatar-wrap {
-      position: relative;
-    }
-    .profile-avatar-wrap img { 
-      width: 36px; 
-      height: 36px; 
-      border-radius: 50%; 
-      object-fit: cover; 
+    .profile-avatar-wrap { position: relative; }
+    .profile-avatar-wrap img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
       border: 2px solid var(--line-green);
     }
     .profile-badge-online {
@@ -137,9 +252,7 @@
       border: 2px solid #fff;
       border-radius: 50%;
     }
-    .profile-name-wrap {
-      flex: 1;
-    }
+    .profile-name-wrap { flex: 1; }
     .profile-status {
       font-size: 11px;
       color: var(--line-green-dark);
@@ -147,10 +260,10 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .profile-box .name { 
-      font-size: 14px; 
-      font-weight: 700; 
-      color: var(--slate-800); 
+    .profile-card .name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--slate-800);
       line-height: 1.2;
     }
     .user-tip-box {
@@ -172,99 +285,97 @@
     }
 
     /* Cards */
-    .card { 
-      background: #FFFFFF; 
-      padding: 20px 18px; 
-      border-radius: var(--card-radius); 
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.02); 
-      margin-bottom: 16px; 
-      border: 1px solid rgba(226, 232, 240, 0.85); 
+    .card {
+      background: #FFFFFF;
+      padding: 20px 18px;
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.02);
+      margin-bottom: 16px;
+      border: 1px solid rgba(226, 232, 240, 0.85);
     }
-    
-    label { 
-      font-weight: 700; 
-      display: block; 
-      margin-bottom: 8px; 
-      font-size: 13.5px; 
-      color: var(--slate-700); 
+
+    label {
+      font-weight: 700;
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13.5px;
+      color: var(--slate-700);
     }
     label span.req {
       color: #EF4444;
       margin-left: 2px;
     }
 
-    select, input, textarea { 
-      width: 100%; 
-      padding: 12px 14px; 
-      border: 1.5px solid var(--slate-200); 
-      border-radius: 12px; 
-      margin-bottom: 16px; 
-      font-size: 14px; 
-      background-color: var(--slate-50); 
-      color: var(--slate-800); 
+    select, input, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--slate-200);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      background-color: var(--slate-50);
+      color: var(--slate-800);
       transition: all 0.2s ease;
     }
-    select:focus, input:focus, textarea:focus { 
-      outline: none; 
-      border-color: var(--line-green); 
-      background-color: #FFFFFF; 
-      box-shadow: 0 0 0 4px var(--line-green-glow); 
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--line-green);
+      background-color: #FFFFFF;
+      box-shadow: 0 0 0 4px var(--line-green-glow);
     }
-    textarea { 
-      resize: vertical; 
-      height: 80px; 
+    textarea {
+      resize: vertical;
+      height: 80px;
     }
-    
+
     /* กล่องแสดงผล วันที่ภาษาไทย */
-    .date-display-box { 
-      background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%); 
-      border: 1px solid #BBF7D0; 
-      border-radius: 12px; 
-      padding: 10px 14px; 
-      margin-top: -8px; 
-      margin-bottom: 16px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      font-size: 13px; 
-      color: #065F46; 
-      font-weight: 500; 
+    .date-display-box {
+      background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+      border: 1px solid #BBF7D0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: -8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #065F46;
+      font-weight: 500;
     }
-    .date-display-box strong {
-      font-weight: 700;
-    }
-    
+    .date-display-box strong { font-weight: 700; }
+
     /* แท็บ Navigation */
-    .tab-container { 
-      display: flex; 
-      background: #F1F5F9; 
-      padding: 5px; 
-      border-radius: 14px; 
-      margin-bottom: 16px; 
+    .tab-container {
+      display: flex;
+      background: #F1F5F9;
+      padding: 5px;
+      border-radius: 14px;
+      margin-bottom: 16px;
       gap: 4px;
     }
-    .tab-btn { 
-      flex: 1; 
-      padding: 9px 4px; 
-      text-align: center; 
-      background: transparent; 
-      border: none; 
-      font-weight: 600; 
-      color: var(--slate-500); 
-      cursor: pointer; 
-      font-size: 13px; 
-      border-radius: 10px; 
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+    .tab-btn {
+      flex: 1;
+      padding: 9px 4px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      font-weight: 600;
+      color: var(--slate-500);
+      cursor: pointer;
+      font-size: 13px;
+      border-radius: 10px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .tab-btn.active { 
-      background: #FFFFFF; 
-      color: var(--line-green-dark); 
+    .tab-btn.active {
+      background: #FFFFFF;
+      color: var(--line-green-dark);
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); 
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    
+
     /* Table Styling */
     .table-wrapper {
       border-radius: 14px;
@@ -272,93 +383,127 @@
       border: 1px solid var(--slate-200);
       margin-top: 6px;
     }
-    .view-table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      font-size: 12.5px; 
+    .view-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
       background: #FFFFFF;
     }
-    .view-table th, .view-table td { 
-      border-bottom: 1px solid var(--slate-100); 
-      border-right: 1px solid var(--slate-100); 
-      padding: 10px 6px; 
-      text-align: center; 
+    .view-table th, .view-table td {
+      border-bottom: 1px solid var(--slate-100);
+      border-right: 1px solid var(--slate-100);
+      padding: 10px 6px;
+      text-align: center;
       vertical-align: middle;
     }
     .view-table th:last-child, .view-table td:last-child { border-right: none; }
     .view-table tr:last-child td { border-bottom: none; }
-    .view-table th { 
-      background-color: #F8FAFC; 
-      color: var(--slate-700); 
-      font-weight: 700; 
-      font-size: 12px; 
+    .view-table th {
+      background-color: #F8FAFC;
+      color: var(--slate-700);
+      font-weight: 700;
+      font-size: 12px;
       line-height: 1.35;
     }
-    
+
     /* Badges */
-    .badge { 
-      display: inline-flex; 
+    .badge {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 5px 9px; 
-      border-radius: 8px; 
-      font-weight: 700; 
-      font-size: 11px; 
-      cursor: default; 
+      padding: 5px 9px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: default;
       transition: 0.15s;
     }
-    .badge.available { 
-      background: #DCFCE7; 
-      color: #15803D; 
+    .badge.available {
+      background: #DCFCE7;
+      color: #15803D;
     }
-    .badge.booked { 
-      background: #FEE2E2; 
-      color: #B91C1C; 
-      cursor: pointer; 
+    .badge.booked {
+      background: #FEE2E2;
+      color: #B91C1C;
+      cursor: pointer;
       box-shadow: 0 1px 3px rgba(185, 28, 28, 0.12);
     }
-    .badge.booked:hover { 
-      transform: scale(1.04); 
+    .badge.booked:hover {
+      transform: scale(1.04);
       background: #FCA5A5;
       color: #7F1D1D;
     }
 
-    /* Calendar Grid */
-    .cal-header { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      margin-bottom: 12px; 
+    /* กล่องรายการประชุมนอกสถานที่ */
+    .offsite-box {
+      display: none;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
     }
-    .cal-header button { 
-      background: #F8FAFC; 
-      border: 1px solid var(--slate-200); 
+    .offsite-box-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .offsite-item {
+      background: #FFFFFF;
+      border: 1px solid #FEF3C7;
+      border-radius: 10px;
+      padding: 9px 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .offsite-item-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--slate-800);
+    }
+    .offsite-item-sub {
+      font-size: 11px;
+      color: var(--slate-500);
+    }
+
+    /* Calendar Grid */
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .cal-header button {
+      background: #F8FAFC;
+      border: 1px solid var(--slate-200);
       width: 34px;
       height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 10px; 
-      cursor: pointer; 
-      font-weight: 700; 
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
       color: var(--slate-700);
       transition: all 0.15s;
     }
-    .cal-header button:hover {
-      background: #EDF2F7;
-    }
-    .cal-month-title { 
-      font-weight: 700; 
-      font-size: 15px; 
-      color: var(--slate-900); 
-    }
-    .cal-legend { 
-      display: flex; 
-      gap: 12px; 
-      justify-content: center; 
-      font-size: 11.5px; 
-      margin-bottom: 12px; 
-      color: var(--slate-500); 
+    .cal-header button:hover { background: #EDF2F7; }
+    .cal-month-title { font-weight: 700; font-size: 15px; color: var(--slate-900); }
+    .cal-legend {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      font-size: 11.5px;
+      margin-bottom: 12px;
+      color: var(--slate-500);
     }
     .legend-item { display: flex; align-items: center; gap: 5px; font-weight: 500; }
     .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
@@ -368,26 +513,26 @@
 
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
     .cal-day-name { font-size: 11px; font-weight: 700; color: var(--slate-400); padding: 4px 0; }
-    .cal-day-cell { 
-      min-height: 52px; 
-      padding: 5px 2px; 
-      font-size: 12px; 
-      border-radius: 10px; 
-      cursor: pointer; 
-      background: var(--slate-50); 
-      border: 1px solid #EDF2F7; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: flex-start; 
-      transition: all 0.15s; 
+    .cal-day-cell {
+      min-height: 52px;
+      padding: 5px 2px;
+      font-size: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      background: var(--slate-50);
+      border: 1px solid #EDF2F7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      transition: all 0.15s;
     }
     .cal-day-cell:hover { background: #EDF2F7; }
-    .cal-day-cell.selected { 
-      border: 2px solid var(--line-green); 
-      background: #F0FDF4; 
-      font-weight: 700; 
-      color: #166534; 
+    .cal-day-cell.selected {
+      border: 2px solid var(--line-green);
+      background: #F0FDF4;
+      font-weight: 700;
+      color: #166534;
       box-shadow: 0 0 0 2px var(--line-green-glow);
     }
     .cal-day-cell.empty { background: transparent; border: none; cursor: default; }
@@ -395,41 +540,41 @@
     .cal-room-pill { font-size: 8.5px; padding: 1px 3px; border-radius: 4px; color: #fff; font-weight: 700; line-height: 1.1; }
 
     /* Room Preview Box */
-    .room-preview { 
-      text-align: center; 
-      margin-bottom: 16px; 
-      background: var(--slate-50); 
-      padding: 10px; 
-      border-radius: 16px; 
-      border: 1px solid var(--slate-200); 
+    .room-preview {
+      text-align: center;
+      margin-bottom: 16px;
+      background: var(--slate-50);
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid var(--slate-200);
     }
-    .room-preview img { 
-      width: 100%; 
-      max-height: 180px; 
-      object-fit: cover; 
-      border-radius: 12px; 
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    .room-preview img {
+      width: 100%;
+      max-height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     }
-    .room-desc { 
-      font-size: 12.5px; 
-      color: var(--slate-500); 
-      margin-top: 8px; 
-      font-weight: 500; 
+    .room-desc {
+      font-size: 12.5px;
+      color: var(--slate-500);
+      margin-top: 8px;
+      font-weight: 500;
       line-height: 1.4;
     }
-    
+
     /* Submit Button */
-    .btn-submit { 
-      width: 100%; 
-      background: linear-gradient(135deg, #06C755 0%, #05a947 100%); 
-      color: white; 
-      border: none; 
-      padding: 15px; 
-      border-radius: 14px; 
-      font-size: 16px; 
-      font-weight: 700; 
-      cursor: pointer; 
-      box-shadow: 0 8px 20px -4px rgba(6, 199, 85, 0.38); 
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #06C755 0%, #05a947 100%);
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px -4px rgba(6, 199, 85, 0.38);
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
@@ -440,107 +585,132 @@
       transform: translateY(-1px);
       box-shadow: 0 10px 24px -4px rgba(6, 199, 85, 0.48);
     }
-    .btn-submit:active:not(:disabled) {
-      transform: translateY(1px);
-    }
-    .btn-submit:disabled { 
-      background: #CBD5E1; 
-      cursor: not-allowed; 
-      box-shadow: none; 
+    .btn-submit:disabled {
+      background: #CBD5E1;
+      cursor: not-allowed;
+      box-shadow: none;
       color: #64748B;
     }
 
     /* Modal */
-    .modal { 
-      display: none; 
-      position: fixed; 
-      z-index: 999; 
-      left: 0; 
-      top: 0; 
-      width: 100%; 
-      height: 100%; 
-      background-color: rgba(15, 23, 42, 0.6); 
-      backdrop-filter: blur(8px); 
-      align-items: center; 
-      justify-content: center; 
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
       padding: 16px;
     }
-    .modal-content { 
-      background-color: #FFFFFF; 
-      border-radius: 24px; 
-      width: 100%; 
-      max-width: 380px; 
-      overflow: hidden; 
-      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.18); 
-      animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1); 
+    .modal-content {
+      background-color: #FFFFFF;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 390px;
+      overflow: hidden;
+      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.18);
+      animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    @keyframes modalPop { 
-      from { transform: scale(0.92); opacity: 0; } 
-      to { transform: scale(1); opacity: 1; } 
+    @keyframes modalPop {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
-    
-    .modal-header { 
-      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); 
-      padding: 18px 20px; 
-      color: white; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
+    .modal-header {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      padding: 18px 20px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .modal-header h3 { 
-      margin: 0; 
-      font-size: 16px; 
-      font-weight: 700; 
-    }
-    .modal-close { 
-      font-size: 24px; 
-      font-weight: bold; 
-      cursor: pointer; 
-      color: var(--slate-400); 
-      line-height: 1; 
+    .modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+    .modal-close {
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      color: var(--slate-400);
+      line-height: 1;
     }
     .modal-close:hover { color: #FFFFFF; }
-    
     .modal-body { padding: 20px; }
-    .detail-item { 
-      display: flex; 
-      align-items: flex-start; 
-      margin-bottom: 12px; 
-      font-size: 13.5px; 
+    .detail-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 11px;
+      font-size: 13.5px;
     }
     .detail-item:last-child { margin-bottom: 0; }
-    .detail-label { 
-      width: 90px; 
-      color: var(--slate-500); 
-      font-weight: 500; 
-      flex-shrink: 0; 
+    .detail-label {
+      width: 88px;
+      color: var(--slate-500);
+      font-weight: 500;
+      flex-shrink: 0;
     }
-    .detail-val { 
-      color: var(--slate-900); 
-      font-weight: 700; 
-      word-break: break-word; 
+    .detail-val {
+      color: var(--slate-900);
+      font-weight: 700;
+      word-break: break-word;
     }
-    .modal-footer { 
-      padding: 0 20px 20px; 
-      text-align: center; 
+
+    /* กล่องสถานะ AI Report ภายใน Modal */
+    .ai-status-box {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--slate-200);
     }
-    .btn-close-modal { 
-      width: 100%; 
-      padding: 12px; 
-      border: 1.5px solid var(--slate-200); 
-      background: #FFFFFF; 
-      border-radius: 12px; 
-      font-weight: 700; 
-      color: var(--slate-700); 
-      cursor: pointer; 
-      transition: 0.15s;
+    .ai-card {
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 12.5px;
     }
-    .btn-close-modal:hover {
-      background: var(--slate-50);
+    .ai-card.live { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+    .ai-card.done { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+    .ai-card.wait { background: #F8FAFC; border: 1px solid #E2E8F0; color: #64748B; text-align: center; }
+    .ai-btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .ai-btn {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .ai-btn-red { background: #DC2626; color: #FFFFFF; }
+    .ai-btn-green { background: #059669; color: #FFFFFF; }
+    .ai-btn-outline { background: #FFFFFF; color: #047857; border: 1px solid #6EE7B7; }
+
+    .modal-footer { padding: 0 20px 20px; text-align: center; }
+    .btn-close-modal {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid var(--slate-200);
+      background: #FFFFFF;
+      border-radius: 12px;
+      font-weight: 700;
+      color: var(--slate-700);
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
+
+  <!-- กล่อง Toast แจ้งเตือน -->
+  <div id="toastBox" class="toast-box"></div>
 
   <div class="container">
     <div class="header-container">
@@ -548,16 +718,16 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.35 5L2 22l5.22-1.31C8.61 21.45 10.25 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>
         </svg>
-        <span>ระบบบริการภายใน</span>
+        <span>ระบบบริการภายใน • AI Summary Connected</span>
       </div>
       <h1 class="header-title">ระบบจองห้องประชุม</h1>
       <div class="header-subtitle">การประปานครหลวง สาขานนทบุรี (กปน.สสน.)</div>
-      
-      <!-- แถบโปรไฟล์ LINE & ข้อความแนะนำ (ไม่มีการแสดง UID หน้าบ้าน) -->
+
+      <!-- แถบโปรไฟล์ LINE & ข้อความแนะนำ -->
       <div id="profileContainer" class="profile-card">
         <div class="profile-info">
           <div class="profile-avatar-wrap">
-            <img id="lineProfileImg" src="" alt="Profile">
+            <img id="lineProfileImg" src="https://placehold.co/72x72/06C755/FFFFFF?text=LINE" alt="Profile">
             <span class="profile-badge-online"></span>
           </div>
           <div class="profile-name-wrap">
@@ -565,8 +735,6 @@
             <div id="lineProfileName" class="name">กำลังเชื่อมต่อ LINE...</div>
           </div>
         </div>
-        
-        <!-- ข้อความแนะนำสำหรับชื่อผู้จอง/ผู้แจ้ง -->
         <div class="user-tip-box">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -580,10 +748,21 @@
       </div>
     </div>
 
+    <!-- แถบทางลัด: กำลังประชุมสดตอนนี้ (แสดงอัตโนมัติเมื่อมีห้องกำลังอัดเสียงสด) -->
+    <div id="liveNowContainer" class="live-banner-wrap">
+      <div class="live-banner-card">
+        <div class="live-banner-header">
+          <span class="live-pill"><span class="live-dot"></span> LIVE NOW • กำลังประชุมสด</span>
+          <span style="font-size: 11px; color: #991B1B; font-weight: 600;">แตะเพื่อดูสรุปวาระสด</span>
+        </div>
+        <div id="liveNowList"></div>
+      </div>
+    </div>
+
     <div class="card">
       <label for="bookingDate">เลือกวันที่ต้องการตรวจสอบ</label>
       <input type="date" id="bookingDate" onchange="onDateInputChange()">
-      
+
       <div class="date-display-box">
         <span>📅 วันที่เลือก:</span>
         <strong id="thaiDateLabel">-</strong>
@@ -628,6 +807,15 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <p style="font-size: 11px; color: #64748B; text-align: center; margin: 10px 0 0;">
+          💡 แตะปุ่มสีแดง <strong>"ไม่ว่าง"</strong> เพื่อดูรายละเอียดการจองหรือเปิดอ่านรายงานสรุป AI
+        </p>
+
+        <!-- รายการประชุมนอกสถานที่ของวันที่เลือก (แสดงเมื่อมีข้อมูล) -->
+        <div id="offsiteListBox" class="offsite-box">
+          <div class="offsite-box-title"><i class="fa-solid fa-building-user"></i> รายการประชุมนอกสถานที่ (วันที่เลือก)</div>
+          <div id="offsiteListItems"></div>
         </div>
       </div>
 
@@ -698,7 +886,7 @@
       </select>
 
       <div class="room-preview">
-        <img id="roomImg" src="https://via.placeholder.com/800x450?text=Room+1" alt="รูปห้องประชุม">
+        <img id="roomImg" src="https://placehold.co/800x450/E2E8F0/475569?text=Meeting+Room+1" alt="รูปห้องประชุม" onerror="this.src='https://placehold.co/800x450/E2E8F0/475569?text=Meeting+Room'">
         <div id="roomDesc" class="room-desc">ชั้น 3 | รองรับ 40 คน | มีระบบโปรเจคเตอร์ ไมค์และวิดีโอคอนเฟอเรนซ์</div>
       </div>
 
@@ -727,7 +915,7 @@
     </div>
   </div>
 
-  <!-- Modal รายละเอียด -->
+  <!-- Modal รายละเอียดการจอง + สถานะรายงาน AI -->
   <div id="detailModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -755,6 +943,9 @@
           <div class="detail-label">รายละเอียด</div>
           <div class="detail-val" id="modalDetail" style="font-weight: 400; color: #475569;">-</div>
         </div>
+
+        <!-- กล่องตรวจสอบสถานะรายงานการประชุม AI (Real-time จาก Firestore) -->
+        <div id="modalAiStatusBox" class="ai-status-box"></div>
       </div>
       <div class="modal-footer">
         <button class="btn-close-modal" onclick="closeModal()">ปิดหน้าต่าง</button>
@@ -763,11 +954,28 @@
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // ตั้งค่า URL ของ Web App และ LIFF ID
-    // -------------------------------------------------------------
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-jnXyhi4jXs8MhfG4jkC1Ye6cLrL0dfJdPBMSPPDK7W2-y1POiuuHsKcn_FlqLGE6/exec"; // URL ที่ได้จาก Web App Apps Script
-    const LIFF_ID = "2012271332-6nSif7Sl"; 
+    // =========================================================================
+    // 🔴🔴🔴 ตั้งค่าการเชื่อมต่อระบบ (อัปเดตให้ตรงกับโปรเจกต์ของคุณ) 🔴🔴🔴
+    // =========================================================================
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-jnXyhi4jXs8MhfG4jkC1Ye6cLrL0dfJdPBMSPPDK7W2-y1POiuuHsKcn_FlqLGE6/exec";
+    const LIFF_ID = "2012271332-6nSif7Sl";
+    // ลิงก์หน้าติดตามรายงานสด (อยู่บน GitHub Pages เดียวกันใช้ชื่อไฟล์ได้เลย)
+    const RECORDER_APP_URL = "meeting-recorder.html";
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZDd23UFQcXfjCOE3_mbCE9YyYTst8dU0",
+      authDomain: "meeting-rec-and-report.firebaseapp.com",
+      projectId: "meeting-rec-and-report"
+    };
+
+    // เชื่อมต่อ Firebase Firestore (รองรับเครือข่ายองค์กร)
+    let db = null;
+    if (firebaseConfig.projectId && firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      try {
+        db.settings({ experimentalForceLongPolling: true });
+      } catch (e) {}
+    }
 
     const roomData = {
       room1: { img: "https://lh3.googleusercontent.com/d/1JqIMn-lRGm8SYRxgpIhjjVcKo5-PYPem", desc: "ชั้น 3 | รองรับ 40 คน | มีระบบโปรเจคเตอร์ ไมค์และวิดีโอคอนเฟอเรนซ์" },
@@ -776,35 +984,66 @@
     };
 
     let calCurrentDate = new Date();
-    let monthlyCache = {}; 
+    let monthlyCache = {};
     let currentScheduleData = null;
-    let currentUserId = ""; // เก็บ UID ใน Background สำหรับส่งบันทึก
+    let currentOffsiteData = [];
+    let currentUserId = "";
+    let slotDetailStore = {};          // เก็บข้อมูลรายละเอียดแต่ละช่องเพื่อเปิด Modal อย่างปลอดภัย
+    let unsubscribeModalStatus = null; // ยกเลิก listener ตอนปิด Modal
 
-    // เรียก API เชื่อมต่อกับ GAS
+    // แจ้งเตือนแบบ Toast (ไม่ใช้ alert)
+    function showToast(message, type = 'info') {
+      const bgMap = {
+        success: '#059669',
+        error: '#DC2626',
+        warning: '#D97706',
+        info: '#1E293B'
+      };
+      const el = document.createElement('div');
+      el.className = 'toast-item';
+      el.style.background = bgMap[type] || bgMap.info;
+      el.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i><span>${escapeHtml(message)}</span>`;
+      document.getElementById('toastBox').appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.25s';
+        setTimeout(() => el.remove(), 260);
+      }, 3600);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    // เรียก API เชื่อมต่อกับ GAS (ใส่ text/plain กัน CORS)
     async function callGasApi(action, payload = {}) {
       const response = await fetch(GAS_API_URL, {
         method: "POST",
-        body: JSON.stringify({ action, ...payload })
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload }),
+        redirect: "follow"
       });
-      return await response.json();
+      const text = await response.text();
+      return JSON.parse(text);
     }
 
     function formatThaiDate(dateStr) {
-      if(!dateStr) return "-";
+      if (!dateStr) return "-";
       const p = dateStr.split('-');
       const y = parseInt(p[0], 10) + 543;
       const m = parseInt(p[1], 10) - 1;
       const d = parseInt(p[2], 10);
       const mNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-      return `${d} ${mNames[m]} ${y} (${String(d).padStart(2,'0')}/${String(m+1).padStart(2,'0')}/${y})`;
+      return `${d} ${mNames[m]} ${y} (${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}/${y})`;
+    }
+
+    function getTodayDateStr() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
 
     function initDate() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const todayStr = `${y}-${m}-${d}`;
+      const todayStr = getTodayDateStr();
       document.getElementById('bookingDate').value = todayStr;
       document.getElementById('thaiDateLabel').innerText = formatThaiDate(todayStr);
     }
@@ -815,57 +1054,116 @@
       loadSchedule();
       fetchMonthOverview();
       initLiff();
+      subscribeLiveMeetingsBanner();
     };
 
-    // จัดการ LIFF เชื่อมต่อโปรไฟล์
+    // -------------------------------------------------------------------------
+    // 1. ติดตามการประชุมที่กำลังอัดเสียงสดอยู่ตอนนี้ (แถบทางลัดด้านบนสุด)
+    // -------------------------------------------------------------------------
+    function hasActiveAgenda(agendas) {
+      if (!Array.isArray(agendas)) return false;
+      return agendas.some(ag => {
+        if (ag.status === 'recording' || ag.status === 'processing' || ag.status === 'paused') return true;
+        if (Array.isArray(ag.subAgendas)) {
+          return ag.subAgendas.some(sub => sub.status === 'recording' || sub.status === 'processing' || sub.status === 'paused');
+        }
+        return false;
+      });
+    }
+
+    function subscribeLiveMeetingsBanner() {
+      if (!db) return;
+      db.collection('meetings').onSnapshot(
+        (snapshot) => {
+          const liveMeetings = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (hasActiveAgenda(data.agendas)) {
+              liveMeetings.push({ id: doc.id, ...data });
+            }
+          });
+
+          const container = document.getElementById('liveNowContainer');
+          const listEl = document.getElementById('liveNowList');
+
+          if (liveMeetings.length === 0) {
+            container.style.display = 'none';
+            listEl.innerHTML = '';
+            return;
+          }
+
+          container.style.display = 'block';
+          listEl.innerHTML = liveMeetings.map(m => {
+            const safeRoom = escapeHtml(m.room || 'ห้องประชุม');
+            const safeTitle = escapeHtml(m.title || '(ไม่ระบุหัวข้อ)');
+            const roomArg = encodeURIComponent(m.room || '');
+            return `
+              <div class="live-item-row">
+                <div class="live-item-info">
+                  <div class="live-item-title">${safeTitle}</div>
+                  <div class="live-item-meta">📍 ${safeRoom} • กำลังสรุปวาระสด</div>
+                </div>
+                <button class="btn-live-open" onclick="openReportViewer('${encodeURIComponent(m.id)}', '${roomArg}')">
+                  <i class="fa-solid fa-play"></i> ดูสด
+                </button>
+              </div>`;
+          }).join('');
+        },
+        (err) => console.warn('Live banner listener warning:', err)
+      );
+    }
+
+    function openReportViewer(encodedEventId, encodedRoom) {
+      const eventId = decodeURIComponent(encodedEventId || '');
+      const room = decodeURIComponent(encodedRoom || '');
+      const roomParam = room ? `&room=${encodeURIComponent(room)}` : '';
+      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=view${roomParam}`;
+      window.location.href = url;
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. จัดการ LIFF เชื่อมต่อโปรไฟล์
+    // -------------------------------------------------------------------------
     function initLiff() {
       if (typeof liff === 'undefined') return;
-
       liff.init({ liffId: LIFF_ID })
         .then(() => {
           if (!liff.isLoggedIn()) {
-            liff.login();
+            // หากเปิดผ่านแอป LINE ให้ล็อกอินอัตโนมัติ (ถ้าเปิดบนเบราว์เซอร์ทดสอบไม่ต้องบังคับเด้งออก)
+            if (liff.isInClient()) liff.login();
             return;
           }
-          
           liff.getProfile().then(profile => {
-            currentUserId = profile.userId; // บันทึก UID เข้าตัวแปรเบื้องหลัง
-            document.getElementById('lineProfileImg').src = profile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+            currentUserId = profile.userId;
+            document.getElementById('lineProfileImg').src = profile.pictureUrl || 'https://placehold.co/72x72/06C755/FFFFFF?text=LINE';
             document.getElementById('lineProfileName').innerText = profile.displayName;
             document.getElementById('profileContainer').style.display = 'block';
-            
+
             const bInput = document.getElementById('bookerName');
-            if (bInput && !bInput.value) {
-              bInput.value = profile.displayName;
-            }
-          }).catch(err => {
-            console.error("LIFF getProfile Error:", err);
-          });
+            if (bInput && !bInput.value) bInput.value = profile.displayName;
+          }).catch(err => console.error("LIFF getProfile Error:", err));
         })
-        .catch(err => {
-          console.error("LIFF Init Error:", err);
-        });
+        .catch(err => console.error("LIFF Init Error:", err));
     }
 
     function switchTab(tabName, event) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      
-      if(tabName === 'schedule') document.getElementById('scheduleTab').classList.add('active');
-      else if(tabName === 'timeline') document.getElementById('timelineTab').classList.add('active');
-      else if(tabName === 'calendar') {
+
+      if (tabName === 'schedule') document.getElementById('scheduleTab').classList.add('active');
+      else if (tabName === 'timeline') document.getElementById('timelineTab').classList.add('active');
+      else if (tabName === 'calendar') {
         document.getElementById('calendarTab').classList.add('active');
         fetchMonthOverview();
       }
-      
-      event.currentTarget.classList.add('active');
+      if (event && event.currentTarget) event.currentTarget.classList.add('active');
     }
 
     function onDateInputChange() {
       const dateVal = document.getElementById('bookingDate').value;
       document.getElementById('thaiDateLabel').innerText = formatThaiDate(dateVal);
       const selected = new Date(dateVal);
-      if(!isNaN(selected)) {
+      if (!isNaN(selected)) {
         calCurrentDate = selected;
         renderCalendar();
       }
@@ -875,10 +1173,9 @@
     async function fetchMonthOverview() {
       const year = calCurrentDate.getFullYear();
       const month = calCurrentDate.getMonth();
-
       try {
         const res = await callGasApi('getMonthOverview', { year, month });
-        if(res.status === "success") {
+        if (res.status === "success") {
           monthlyCache = res.data;
           renderCalendar();
         }
@@ -891,7 +1188,6 @@
       const year = calCurrentDate.getFullYear();
       const month = calCurrentDate.getMonth();
       const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-      
       document.getElementById('calMonthTitle').innerText = `${monthNames[month]} ${year + 543}`;
 
       const firstDay = new Date(year, month, 1).getDay();
@@ -919,33 +1215,15 @@
         const dStr = String(day).padStart(2, '0');
         const thisDateStr = `${year}-${mStr}-${dStr}`;
 
-        if (thisDateStr === currentSelectedDate) {
-          cell.classList.add('selected');
-        }
+        if (thisDateStr === currentSelectedDate) cell.classList.add('selected');
 
         const dayBookings = monthlyCache[thisDateStr];
         if (dayBookings) {
           const dotsBox = document.createElement('div');
           dotsBox.className = 'cal-dots-container';
-
-          if (dayBookings['room1']) {
-            const p1 = document.createElement('span');
-            p1.className = 'cal-room-pill dot-r1';
-            p1.innerText = 'ร1';
-            dotsBox.appendChild(p1);
-          }
-          if (dayBookings['room2']) {
-            const p2 = document.createElement('span');
-            p2.className = 'cal-room-pill dot-r2';
-            p2.innerText = 'ร2';
-            dotsBox.appendChild(p2);
-          }
-          if (dayBookings['room3']) {
-            const p3 = document.createElement('span');
-            p3.className = 'cal-room-pill dot-r3';
-            p3.innerText = 'ร3';
-            dotsBox.appendChild(p3);
-          }
+          if (dayBookings['room1']) dotsBox.innerHTML += '<span class="cal-room-pill dot-r1">ร1</span>';
+          if (dayBookings['room2']) dotsBox.innerHTML += '<span class="cal-room-pill dot-r2">ร2</span>';
+          if (dayBookings['room3']) dotsBox.innerHTML += '<span class="cal-room-pill dot-r3">ร3</span>';
           cell.appendChild(dotsBox);
         }
 
@@ -955,7 +1233,6 @@
           renderCalendar();
           loadSchedule();
         };
-
         calCells.appendChild(cell);
       }
     }
@@ -975,31 +1252,32 @@
 
     async function loadSchedule() {
       const date = document.getElementById('bookingDate').value;
-      if(!date) return;
+      if (!date) return;
 
       ['room1', 'room2', 'room3'].forEach((r, idx) => {
         ['morning', 'afternoon', 'fullday'].forEach(s => {
-          const el = document.getElementById(`r${idx+1}_${s}`);
-          if(el) el.innerHTML = `<span class="badge available" style="opacity:0.6;">...</span>`;
+          const el = document.getElementById(`r${idx + 1}_${s}`);
+          if (el) el.innerHTML = `<span class="badge available" style="opacity:0.6;">...</span>`;
         });
       });
 
       try {
         const result = await callGasApi('getScheduleData', { date });
-        if(result.status === "success") {
+        if (result.status === "success") {
           currentScheduleData = result.data;
-          updateTableUI(result.data);
+          currentOffsiteData = result.offsite || [];
+          updateTableUI(result.data, currentOffsiteData);
           updateAvailableTimeSlots();
         } else {
-          alert("ดึงข้อมูลไม่สำเร็จ: " + result.message);
+          showToast("ดึงข้อมูลไม่สำเร็จ: " + result.message, "error");
         }
       } catch (err) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ Server: " + err);
+        showToast("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: " + err.message, "error");
       }
     }
 
     function updateAvailableTimeSlots() {
-      if(!currentScheduleData) return;
+      if (!currentScheduleData) return;
       const selectedRoom = document.getElementById('roomSelect').value;
       const roomSchedule = currentScheduleData[selectedRoom];
 
@@ -1011,41 +1289,41 @@
       const isMorningBooked = (roomSchedule.morning.status === 'booked');
       const isAfternoonBooked = (roomSchedule.afternoon.status === 'booked');
 
-      if(isMorningBooked) {
-        optMorning.disabled = true;
-        optMorning.innerText = "ช่วงเช้า (08:30 - 12:00) [ไม่ว่าง]";
-      } else {
-        optMorning.disabled = false;
-        optMorning.innerText = "ช่วงเช้า (08:30 - 12:00)";
-      }
+      optMorning.disabled = isMorningBooked;
+      optMorning.innerText = isMorningBooked ? "ช่วงเช้า (08:30 - 12:00) [ไม่ว่าง]" : "ช่วงเช้า (08:30 - 12:00)";
 
-      if(isAfternoonBooked) {
-        optAfternoon.disabled = true;
-        optAfternoon.innerText = "ช่วงบ่าย (13:00 - 16:30) [ไม่ว่าง]";
-      } else {
-        optAfternoon.disabled = false;
-        optAfternoon.innerText = "ช่วงบ่าย (13:00 - 16:30)";
-      }
+      optAfternoon.disabled = isAfternoonBooked;
+      optAfternoon.innerText = isAfternoonBooked ? "ช่วงบ่าย (13:00 - 16:30) [ไม่ว่าง]" : "ช่วงบ่าย (13:00 - 16:30)";
 
-      if(isMorningBooked || isAfternoonBooked) {
-        optFullday.disabled = true;
-        optFullday.innerText = "ตลอดวัน (08:30 - 16:30) [ไม่ว่าง]";
-      } else {
-        optFullday.disabled = false;
-        optFullday.innerText = "ตลอดวัน (08:30 - 16:30)";
-      }
+      optFullday.disabled = (isMorningBooked || isAfternoonBooked);
+      optFullday.innerText = (isMorningBooked || isAfternoonBooked) ? "ตลอดวัน (08:30 - 16:30) [ไม่ว่าง]" : "ตลอดวัน (08:30 - 16:30)";
 
-      if(timeSelect.selectedOptions[0] && timeSelect.selectedOptions[0].disabled) {
-        if(!optMorning.disabled) timeSelect.value = "morning";
-        else if(!optAfternoon.disabled) timeSelect.value = "afternoon";
-        else if(!optFullday.disabled) timeSelect.value = "fullday";
+      if (timeSelect.selectedOptions[0] && timeSelect.selectedOptions[0].disabled) {
+        if (!optMorning.disabled) timeSelect.value = "morning";
+        else if (!optAfternoon.disabled) timeSelect.value = "afternoon";
+        else if (!optFullday.disabled) timeSelect.value = "fullday";
       }
     }
 
-    function updateTableUI(data) {
+    function parseDescription(desc) {
+      let booker = '-', phone = '-', detail = '-';
+      if (desc && desc !== '-') {
+        desc.split('\n').forEach(line => {
+          if (line.startsWith('ผู้จอง:')) booker = line.replace('ผู้จอง:', '').trim();
+          else if (line.startsWith('เบอร์ภายใน:')) phone = line.replace('เบอร์ภายใน:', '').trim();
+          else if (line.startsWith('รายละเอียดเพิ่มเติม:')) detail = line.replace('รายละเอียดเพิ่มเติม:', '').trim();
+        });
+        if (booker === '-' && detail === '-') detail = desc;
+      }
+      return { booker, phone, detail };
+    }
+
+    function updateTableUI(data, offsiteList) {
       const rooms = ['room1', 'room2', 'room3'];
       const roomNames = { room1: 'ห้องประชุม 1', room2: 'ห้องประชุม 2', room3: 'ห้องประชุม 3' };
       const slotNames = { morning: 'ช่วงเช้า (08:30-12:00)', afternoon: 'ช่วงบ่าย (13:00-16:30)', fullday: 'ตลอดวัน (08:30-16:30)' };
+
+      slotDetailStore = {};
 
       rooms.forEach((rId, idx) => {
         const rIndex = idx + 1;
@@ -1056,49 +1334,161 @@
 
           let htmlContent = '';
           if (slotInfo.status === 'booked') {
-            let booker = '-', phone = '-', detail = '-';
-            if(slotInfo.description) {
-              slotInfo.description.split('\n').forEach(line => {
-                if(line.startsWith('ผู้จอง:')) booker = line.replace('ผู้จอง:', '').trim();
-                if(line.startsWith('เบอร์ภายใน:')) phone = line.replace('เบอร์ภายใน:', '').trim();
-                if(line.startsWith('รายละเอียดเพิ่มเติม:')) detail = line.replace('รายละเอียดเพิ่มเติม:', '').trim();
-              });
-            }
-            htmlContent = `<span class="badge booked" onclick="showBookingDetail('${roomNames[rId]}', '${slotNames[slot]}', '${slotInfo.title}', '${booker}', '${phone}', '${detail}')">ไม่ว่าง</span>`;
+            const parsed = parseDescription(slotInfo.description);
+            const storeKey = `${rId}_${slot}`;
+            slotDetailStore[storeKey] = {
+              eventId: slotInfo.eventId || '',
+              room: roomNames[rId],
+              slot: slotInfo.timeText ? `${slotNames[slot]} (${slotInfo.timeText})` : slotNames[slot],
+              title: slotInfo.title || '-',
+              booker: parsed.booker,
+              phone: parsed.phone,
+              detail: parsed.detail
+            };
+            htmlContent = `<span class="badge booked" onclick="openSlotModal('${storeKey}')">ไม่ว่าง</span>`;
           } else {
             htmlContent = `<span class="badge available">ว่าง</span>`;
           }
 
-          if(el) el.innerHTML = htmlContent;
-          if(tEl) tEl.innerHTML = htmlContent;
+          if (el) el.innerHTML = htmlContent;
+          if (tEl) tEl.innerHTML = htmlContent;
         });
       });
+
+      // แสดงรายการประชุมนอกสถานที่ (ถ้ามีในวันที่เลือก)
+      const offsiteBox = document.getElementById('offsiteListBox');
+      const offsiteItemsEl = document.getElementById('offsiteListItems');
+      if (offsiteList && offsiteList.length > 0) {
+        offsiteBox.style.display = 'block';
+        offsiteItemsEl.innerHTML = offsiteList.map((ev, idx) => {
+          const storeKey = `offsite_${idx}`;
+          const parsed = parseDescription(ev.description);
+          slotDetailStore[storeKey] = {
+            eventId: ev.eventId || '',
+            room: ev.room || 'นอกสถานที่',
+            slot: ev.timeText || '-',
+            title: ev.title || '-',
+            booker: parsed.booker,
+            phone: parsed.phone,
+            detail: parsed.detail
+          };
+          return `
+            <div class="offsite-item" onclick="openSlotModal('${storeKey}')">
+              <div>
+                <div class="offsite-item-title">${escapeHtml(ev.title)}</div>
+                <div class="offsite-item-sub">📍 ${escapeHtml(ev.room)} • 🕒 ${escapeHtml(ev.timeText)}</div>
+              </div>
+              <span class="badge booked" style="background:#FEF3C7; color:#92400E;">ดูรายงาน</span>
+            </div>`;
+        }).join('');
+      } else {
+        offsiteBox.style.display = 'none';
+        offsiteItemsEl.innerHTML = '';
+      }
     }
 
-    function showBookingDetail(room, slot, title, booker, phone, detail) {
-      document.getElementById('modalRoom').innerText = room;
-      document.getElementById('modalSlot').innerText = slot;
-      document.getElementById('modalTitle').innerText = title;
-      document.getElementById('modalBooker').innerText = booker;
-      document.getElementById('modalPhone').innerText = phone;
-      document.getElementById('modalDetail').innerText = detail;
+    // -------------------------------------------------------------------------
+    // 3. เปิด Modal รายละเอียดการจอง + เช็กสถานะรายงาน AI จาก Firestore
+    // -------------------------------------------------------------------------
+    function openSlotModal(storeKey) {
+      const item = slotDetailStore[storeKey];
+      if (!item) return;
+
+      document.getElementById('modalRoom').innerText = item.room;
+      document.getElementById('modalSlot').innerText = item.slot;
+      document.getElementById('modalTitle').innerText = item.title;
+      document.getElementById('modalBooker').innerText = item.booker;
+      document.getElementById('modalPhone').innerText = item.phone;
+      document.getElementById('modalDetail').innerText = item.detail;
       document.getElementById('detailModal').style.display = 'flex';
+
+      checkModalAiStatus(item);
+    }
+
+    function checkModalAiStatus(item) {
+      if (unsubscribeModalStatus) {
+        unsubscribeModalStatus();
+        unsubscribeModalStatus = null;
+      }
+
+      const box = document.getElementById('modalAiStatusBox');
+      const selectedDate = document.getElementById('bookingDate').value;
+      const isToday = (selectedDate === getTodayDateStr());
+
+      if (!db || !item.eventId) {
+        box.innerHTML = `<div class="ai-card wait">ยังไม่ได้เชื่อมต่อข้อมูลรายงานการประชุม AI สำหรับรายการนี้</div>`;
+        return;
+      }
+
+      box.innerHTML = `<div class="ai-card wait"><i class="fa-solid fa-circle-notch fa-spin"></i> กำลังตรวจสอบสถานะรายงานการประชุม...</div>`;
+
+      unsubscribeModalStatus = db.collection('meetings').doc(item.eventId).onSnapshot(
+        (doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            const isLive = hasActiveAgenda(data.agendas);
+            const encodedId = encodeURIComponent(item.eventId);
+            const encodedRoom = encodeURIComponent(item.room || '');
+
+            if (isLive) {
+              box.innerHTML = `
+                <div class="ai-card live">
+                  <div style="font-weight:700; display:flex; align-items:center; gap:6px;">
+                    <span class="live-dot" style="background:#DC2626;"></span> กำลังบันทึกการประชุมสด (Live)
+                  </div>
+                  <div class="ai-btn-row">
+                    <button class="ai-btn ai-btn-red" onclick="openReportViewer('${encodedId}', '${encodedRoom}')">
+                      <i class="fa-solid fa-mobile-screen"></i> ติดตามสรุปวาระสด
+                    </button>
+                  </div>
+                </div>`;
+            } else {
+              box.innerHTML = `
+                <div class="ai-card done">
+                  <div style="font-weight:700;"><i class="fa-solid fa-circle-check"></i> มีบันทึกและสรุปรายงานการประชุมแล้ว</div>
+                  <div class="ai-btn-row">
+                    <button class="ai-btn ai-btn-green" onclick="openReportViewer('${encodedId}', '${encodedRoom}')">
+                      <i class="fa-solid fa-file-lines"></i> อ่านรายงานสรุป
+                    </button>
+                    ${data.docUrl ? `<a href="${data.docUrl}" target="_blank" class="ai-btn ai-btn-outline"><i class="fa-solid fa-file-word"></i> Docs</a>` : ''}
+                  </div>
+                </div>`;
+            }
+          } else if (isToday) {
+            box.innerHTML = `
+              <div class="ai-card wait">
+                <i class="fa-solid fa-hourglass-half" style="margin-bottom:4px;"></i><br>
+                รอผู้บันทึกเริ่มการประชุมผ่านเครื่อง Desktop<br>
+                <span style="font-size:11px;">(ปุ่มดูรายงานสดจะขึ้นที่นี่อัตโนมัติเมื่อเริ่มประชุม)</span>
+              </div>`;
+          } else {
+            box.innerHTML = `<div class="ai-card wait">ยังไม่มีรายงานสรุปการประชุมสำหรับรายการนี้</div>`;
+          }
+        },
+        (err) => {
+          box.innerHTML = `<div class="ai-card wait">ตรวจสอบสถานะรายงานไม่ได้ (${escapeHtml(err.code || err.message)})</div>`;
+        }
+      );
     }
 
     function closeModal() {
+      if (unsubscribeModalStatus) {
+        unsubscribeModalStatus();
+        unsubscribeModalStatus = null;
+      }
       document.getElementById('detailModal').style.display = 'none';
     }
 
     window.onclick = function(event) {
       const modal = document.getElementById('detailModal');
-      if (event.target == modal) { modal.style.display = 'none'; }
-    }
+      if (event.target === modal) closeModal();
+    };
 
+    // -------------------------------------------------------------------------
+    // 4. ส่ง Flex Message & บันทึกการจอง
+    // -------------------------------------------------------------------------
     function sendBookingFlex(roomName, dateText, slotText, title, booker, phone) {
-      if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
-        console.log("LIFF ไม่ได้ล็อกอิน");
-        return;
-      }
+      if (typeof liff === 'undefined' || !liff.isLoggedIn() || !liff.isInClient()) return;
 
       const flexObj = {
         type: "flex",
@@ -1160,11 +1550,7 @@
         }
       };
 
-      liff.sendMessages([flexObj])
-        .then(() => console.log("ส่งข้อความสำเร็จ"))
-        .catch(err => {
-          console.warn("ไม่สามารถส่ง Flex Message: " + err.message);
-        });
+      liff.sendMessages([flexObj]).catch(err => console.warn("ไม่สามารถส่ง Flex Message:", err.message));
     }
 
     async function submitBooking() {
@@ -1177,38 +1563,23 @@
       const detail = document.getElementById('meetingDetail').value.trim();
 
       const opt = document.getElementById(`opt_${slot}`);
-      if(opt && opt.disabled) {
-        alert('ช่วงเวลาดังกล่าวไม่ว่าง กรุณาเลือกช่วงเวลาอื่น');
-        return;
+      if (opt && opt.disabled) {
+        return showToast('ช่วงเวลาดังกล่าวไม่ว่าง กรุณาเลือกช่วงเวลาอื่น', 'warning');
       }
-
-      if(!title || !booker || !phone) {
-        alert('กรุณากรอกหัวข้อ ผู้จอง และเบอร์ภายในให้ครบถ้วน');
-        return;
+      if (!title || !booker || !phone) {
+        return showToast('กรุณากรอกหัวข้อ ผู้จอง และเบอร์ภายในให้ครบถ้วน', 'warning');
       }
 
       const btn = document.getElementById('btnSubmit');
       btn.disabled = true;
-      btn.innerHTML = `<span>กำลังบันทึกข้อมูล...</span>`;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>กำลังบันทึกข้อมูล...</span>`;
 
-      const payload = { 
-        room, 
-        date, 
-        slot, 
-        title, 
-        booker, 
-        phone, 
-        detail,
-        userId: currentUserId // ยังคงส่ง UID ไปยัง Apps Script เบื้องหลังตามปกติ
-      };
+      const payload = { room, date, slot, title, booker, phone, detail, userId: currentUserId };
 
       try {
         const res = await callGasApi('saveBooking', { data: payload });
-        btn.disabled = false;
-        btn.innerHTML = `<span>ยืนยันการจองห้องประชุม</span>`;
-        
-        alert(res.message);
-        if(res.status === "success") {
+        if (res.status === "success") {
+          showToast(res.message || "จองห้องประชุมสำเร็จเรียบร้อย!", "success");
           const roomNames = { room1: 'ห้องประชุม 1', room2: 'ห้องประชุม 2', room3: 'ห้องประชุม 3' };
           const slotLabels = {
             morning: 'ช่วงเช้า (08:30 - 12:00)',
@@ -1224,11 +1595,14 @@
           document.getElementById('meetingTitle').value = '';
           document.getElementById('internalPhone').value = '';
           document.getElementById('meetingDetail').value = '';
+        } else {
+          showToast(res.message || "ไม่สามารถบันทึกการจองได้", "error");
         }
       } catch (err) {
+        showToast("เกิดข้อผิดพลาดในการบันทึก: " + err.message, "error");
+      } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>ยืนยันการจองห้องประชุม</span>`;
-        alert("เกิดข้อผิดพลาดในการบันทึก: " + err);
       }
     }
   </script>
