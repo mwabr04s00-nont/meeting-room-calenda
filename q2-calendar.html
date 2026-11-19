@@ -204,8 +204,14 @@
       projectId: "meeting-rec-and-report"
     };
 
+    // ตั้งค่า Firestore ให้รองรับเครือข่ายองค์กร/Proxy (แก้ปัญหาหมุนค้างไม่หยุด)
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    try {
+      db.settings({ experimentalForceLongPolling: true });
+    } catch (e) {
+      console.warn('Firestore settings warning:', e);
+    }
 
     let rawBookings = [];
     let dateSortOrder = 'upcoming';
@@ -239,11 +245,9 @@
       try {
         if (GAS_WEB_APP_URL.includes('YOUR_GAS')) throw new Error('กรุณาระบุ URL ของ GAS');
         
-        // เพิ่ม redirect: 'follow' เพื่อจัดการการเปลี่ยนเส้นทางของ Google
         const response = await fetch(GAS_WEB_APP_URL, { method: 'GET', redirect: 'follow' });
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         
-        // รับค่าเป็น Text ก่อนเพื่อป้องกัน Error กรณี GAS ส่ง HTML กลับมาแทน JSON
         const textData = await response.text();
         try {
           const data = JSON.parse(textData);
@@ -423,6 +427,7 @@
     function getDayName(idx) { return ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][idx]; }
 
     let unsubscribeMeetingStatus = null;
+    let statusCheckTimeout = null;
 
     function openEventDetail(id) {
       const ev = rawBookings.find(b => b.id === id);
@@ -438,82 +443,130 @@
     }
 
     function closeEventDetail() {
-      if(unsubscribeMeetingStatus) unsubscribeMeetingStatus(); 
+      if (unsubscribeMeetingStatus) { unsubscribeMeetingStatus(); unsubscribeMeetingStatus = null; }
+      if (statusCheckTimeout) { clearTimeout(statusCheckTimeout); statusCheckTimeout = null; }
       document.getElementById('eventDetailModal').classList.add('hidden');
     }
 
+    function buildStartRecordHtml(eventData) {
+      const safeTitle = (eventData.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      return `
+        <div id="start-record-step1" class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+          <p class="text-xs text-indigo-700 mb-3 font-medium"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> พร้อมสำหรับการบันทึกเสียงและสรุปรายงานด้วย AI</p>
+          <button onclick="showRecordConfirmation()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-microphone"></i> เริ่มบันทึกเสียงการประชุม
+          </button>
+        </div>
+
+        <div id="start-record-step2" class="hidden bg-amber-50 border-2 border-amber-400 rounded-xl p-4 transition-all">
+          <p class="text-sm font-bold text-amber-900 mb-1"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i> ยืนยันการเปิดห้องบันทึกการประชุม?</p>
+          <p class="text-xs text-amber-800 mb-4 leading-relaxed">
+            หัวข้อ: <span class="font-bold underline">${safeTitle}</span><br>
+            (เมื่อกดยืนยัน หน้าจอของทุกคนที่เข้าร่วมผ่านโทรศัพท์จะเปลี่ยนเป็นโหมดรายงานสดทันที)
+          </p>
+          <div class="flex gap-2">
+            <button onclick="cancelRecordConfirmation()" class="flex-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold py-2 px-3 rounded-lg transition">ยกเลิก</button>
+            <button onclick="openRecorderWorkspace('${eventData.id}')" class="flex-[1.5] bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition">✅ ยืนยัน เริ่มเลย</button>
+          </div>
+        </div>
+      `;
+    }
+
     function checkMeetingStatus(eventData) {
+      if (unsubscribeMeetingStatus) { unsubscribeMeetingStatus(); unsubscribeMeetingStatus = null; }
+      if (statusCheckTimeout) { clearTimeout(statusCheckTimeout); statusCheckTimeout = null; }
+
       const actionBox = document.getElementById('meeting-ai-action-box');
       actionBox.innerHTML = `<div class="flex items-center justify-center py-4"><i class="fa-solid fa-spinner fa-spin text-slate-400 text-xl mr-2"></i><span class="text-sm text-slate-500">กำลังตรวจสอบสถานะรายงานการประชุม...</span></div>`;
 
-      const todayStr = new Date().toLocaleDateString('en-CA'); 
-      const eventDateStr = new Date(eventData.rawStart).toLocaleDateString('en-CA');
-      const isToday = (todayStr === eventDateStr);
+      const todayStr = formatDateKey(new Date());
+      const isToday = (eventData.dateKey === todayStr);
 
-      unsubscribeMeetingStatus = db.collection('meetings').doc(eventData.id).onSnapshot((doc) => {
-        const isStartedOrHasReport = doc.exists; 
-        const data = doc.exists ? doc.data() : null;
-        let html = '';
+      // เช็กก่อนว่าใส่ firebaseConfig จริงหรือยัง
+      if (!firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID") {
+        actionBox.innerHTML = `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-center text-xs text-rose-700">⚠️ ยังไม่ได้ตั้งค่า <b>firebaseConfig</b> ในไฟล์ q-calendar.html</div>`;
+        return;
+      }
 
-        if (isStartedOrHasReport) {
-          const isLive = data.agendas && data.agendas.some(a => a.status === 'recording' || a.status === 'processing');
-          html += `
-            <div class="${isLive ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'} border rounded-xl p-4 flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                ${isLive 
-                  ? `<span class="text-sm font-bold text-red-700 flex items-center gap-2"><span class="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span> กำลังบันทึกการประชุมสด (Live)</span>`
-                  : `<span class="text-sm font-bold text-emerald-800"><i class="fa-solid fa-check-circle mr-1"></i> มีบันทึกและสรุปรายงานการประชุมแล้ว</span>`
-                }
-                ${data.docUrl ? `<a href="${data.docUrl}" target="_blank" class="text-xs bg-white border border-emerald-300 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-100 font-semibold shadow-sm transition"><i class="fa-solid fa-file-word mr-1"></i> เปิด Google Docs</a>` : ''}
-              </div>
-              <div class="flex gap-2">
-                <button onclick="openReportViewer('${eventData.id}')" class="flex-1 ${isLive ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white text-sm font-medium py-2 px-3 rounded-lg transition shadow-md flex justify-center items-center gap-1.5">
-                  ${isLive ? '<i class="fa-solid fa-mobile-screen"></i> ติดตามสรุปวาระสด' : '<i class="fa-solid fa-file-lines"></i> อ่านรายงานสรุป'}
-                </button>
-                ${isDesktop && isToday ? `
-                  <button onclick="openRecorderWorkspace('${eventData.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition shadow-md flex justify-center items-center gap-1.5">
-                    <i class="fa-solid fa-microphone-lines"></i> จัดการบันทึกเสียง
-                  </button>
-                ` : ''}
-              </div>
-            </div>
-          `;
-        } else if (isToday) {
-          if (isDesktop) {
-            const safeTitle = (eventData.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      let isResolved = false;
+
+      // ตั้งเวลา Timeout 6 วินาที ป้องกันการหมุนค้างกรณีเครือข่ายบล็อก Firestore
+      statusCheckTimeout = setTimeout(() => {
+        if (!isResolved) {
+          let fallbackHtml = `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center text-xs text-amber-800 mb-3">
+            <i class="fa-solid fa-wifi mr-1"></i> เชื่อมต่อฐานข้อมูลสถานะ (Firestore) ล่าช้า อาจเกิดจากเครือข่ายองค์กรหรือสิทธิ์ Firestore Rules
+          </div>`;
+          if (isToday && isDesktop) {
+            fallbackHtml += buildStartRecordHtml(eventData);
+          } else {
+            fallbackHtml += `<div class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center text-xs text-slate-400 italic">ไม่พบรายงานการประชุมสำหรับรายการนี้</div>`;
+          }
+          actionBox.innerHTML = fallbackHtml;
+        }
+      }, 6000);
+
+      unsubscribeMeetingStatus = db.collection('meetings').doc(eventData.id).onSnapshot(
+        (doc) => {
+          isResolved = true;
+          if (statusCheckTimeout) { clearTimeout(statusCheckTimeout); statusCheckTimeout = null; }
+
+          const isStartedOrHasReport = doc.exists;
+          const data = doc.exists ? doc.data() : null;
+          let html = '';
+
+          if (isStartedOrHasReport) {
+            const isLive = data.agendas && data.agendas.some(a => a.status === 'recording' || a.status === 'processing');
             html += `
-              <div id="start-record-step1" class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-                <p class="text-xs text-indigo-700 mb-3 font-medium"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> พร้อมสำหรับการบันทึกเสียงและสรุปรายงานด้วย AI</p>
-                <button onclick="showRecordConfirmation()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
-                  <i class="fa-solid fa-microphone"></i> เริ่มบันทึกเสียงการประชุม
-                </button>
-              </div>
-
-              <div id="start-record-step2" class="hidden bg-amber-50 border-2 border-amber-400 rounded-xl p-4 transition-all">
-                <p class="text-sm font-bold text-amber-900 mb-1"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i> ยืนยันการเปิดห้องบันทึกการประชุม?</p>
-                <p class="text-xs text-amber-800 mb-4 leading-relaxed">
-                  หัวข้อ: <span class="font-bold underline">${safeTitle}</span><br>
-                  (เมื่อกดยืนยัน หน้าจอของทุกคนที่เข้าร่วมผ่านโทรศัพท์จะเปลี่ยนเป็นโหมดรายงานสดทันที)
-                </p>
+              <div class="${isLive ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'} border rounded-xl p-4 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  ${isLive 
+                    ? `<span class="text-sm font-bold text-red-700 flex items-center gap-2"><span class="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span> กำลังบันทึกการประชุมสด (Live)</span>`
+                    : `<span class="text-sm font-bold text-emerald-800"><i class="fa-solid fa-check-circle mr-1"></i> มีบันทึกและสรุปรายงานการประชุมแล้ว</span>`
+                  }
+                  ${data.docUrl ? `<a href="${data.docUrl}" target="_blank" class="text-xs bg-white border border-emerald-300 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-100 font-semibold shadow-sm transition"><i class="fa-solid fa-file-word mr-1"></i> เปิด Google Docs</a>` : ''}
+                </div>
                 <div class="flex gap-2">
-                  <button onclick="cancelRecordConfirmation()" class="flex-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold py-2 px-3 rounded-lg transition">ยกเลิก</button>
-                  <button onclick="openRecorderWorkspace('${eventData.id}')" class="flex-[1.5] bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition">✅ ยืนยัน เริ่มเลย</button>
+                  <button onclick="openReportViewer('${eventData.id}')" class="flex-1 ${isLive ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white text-sm font-medium py-2 px-3 rounded-lg transition shadow-md flex justify-center items-center gap-1.5">
+                    ${isLive ? '<i class="fa-solid fa-mobile-screen"></i> ติดตามสรุปวาระสด' : '<i class="fa-solid fa-file-lines"></i> อ่านรายงานสรุป'}
+                  </button>
+                  ${isDesktop && isToday ? `
+                    <button onclick="openRecorderWorkspace('${eventData.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition shadow-md flex justify-center items-center gap-1.5">
+                      <i class="fa-solid fa-microphone-lines"></i> จัดการบันทึกเสียง
+                    </button>
+                  ` : ''}
                 </div>
               </div>
             `;
+          } else if (isToday) {
+            if (isDesktop) {
+              html += buildStartRecordHtml(eventData);
+            } else {
+              html += `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                  <i class="fa-solid fa-hourglass-half text-slate-400 text-lg mb-2"></i>
+                  <p class="text-xs text-slate-500 font-medium">รอผู้บันทึกเริ่มการประชุมผ่านเครื่อง Desktop<br>(ปุ่มติดตามรายงานสดจะปรากฏขึ้นที่นี่อัตโนมัติเมื่อเริ่มประชุม)</p>
+                </div>
+              `;
+            }
           } else {
-            html += `
-              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
-                <i class="fa-solid fa-hourglass-half text-slate-400 text-lg mb-2"></i>
-                <p class="text-xs text-slate-500 font-medium">รอผู้บันทึกเริ่มการประชุมผ่านเครื่อง Desktop<br>(ปุ่มติดตามรายงานสดจะปรากฏขึ้นที่นี่อัตโนมัติเมื่อเริ่มประชุม)</p>
-              </div>
-            `;
+            html = `<div class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center text-xs text-slate-400 italic">ไม่พบรายงานการประชุมสำหรับรายการนี้ (ปุ่มเริ่มบันทึกเสียงจะแสดงเฉพาะรายการที่ประชุมวันนี้)</div>`;
           }
-        } else {
-          html = `<div class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center text-xs text-slate-400 italic">ไม่พบรายงานการประชุมสำหรับรายการนี้</div>`;
+          actionBox.innerHTML = html;
+        },
+        (error) => {
+          // ดักจับ Error จาก Firestore ไม่ให้หมุนค้าง
+          isResolved = true;
+          if (statusCheckTimeout) { clearTimeout(statusCheckTimeout); statusCheckTimeout = null; }
+          console.error("Firestore Error:", error);
+          let errHtml = `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-center text-xs text-rose-700 mb-3">
+            ⚠️ ตรวจสอบสถานะไม่ได้ (${error.code || error.message})<br>โปรดตรวจสอบสิทธิ์ Firestore Rules ใน Firebase Console
+          </div>`;
+          if (isToday && isDesktop) {
+            errHtml += buildStartRecordHtml(eventData);
+          }
+          actionBox.innerHTML = errHtml;
         }
-        actionBox.innerHTML = html;
-      });
+      );
     }
 
     function showRecordConfirmation() {
@@ -553,7 +606,6 @@
         const response = await fetch(GAS_WEB_APP_URL, {
           method: 'POST',
           headers: { 
-            // ตั้งค่า Content-Type เป็น text/plain เพื่อหลีกเลี่ยง CORS Preflight Error จากเบราว์เซอร์
             'Content-Type': 'text/plain;charset=utf-8' 
           },
           body: JSON.stringify({ action: 'createOffsiteEvent', title, location }),
