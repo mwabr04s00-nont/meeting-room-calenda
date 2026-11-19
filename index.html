@@ -65,80 +65,23 @@
     }
 
     .container {
-      max-width: 460px;
-      margin: 0 auto;
-    }
-
-    /* Toast แจ้งเตือน (แทน alert) */
-    .toast-box {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2000;
-      width: calc(100% - 32px);
-      max-width: 420px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      pointer-events: none;
-    }
-    .toast-item {
-      padding: 12px 16px;
-      border-radius: 14px;
-      color: #ffffff;
-      font-size: 13px;
-      font-weight: 700;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      animation: toastUp 0.2s ease-out;
-    }
-    @keyframes toastUp {
-      from { transform: translateY(14px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    /* Header */
-    .header-container {
-      text-align: center;
-      margin-bottom: 18px;
-      padding-top: 8px;
-    }
-    .brand-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: #FFFFFF;
-      color: var(--line-green-dark);
-      font-size: 11.5px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      box-shadow: 0 2px 8px rgba(6, 199, 85, 0.12);
-      border: 1px solid rgba(6, 199, 85, 0.2);
-      margin-bottom: 8px;
-    }
-    .header-title {
-      font-size: 23px;
-      font-weight: 700;
-      color: var(--slate-900);
-      margin: 0;
-      letter-spacing: -0.3px;
-    }
-    .header-subtitle {
-      font-size: 14px;
-      font-weight: 400;
-      color: var(--slate-500);
-      margin-top: 3px;
-    }
-
-    /* แถบทางลัด Live Now (แสดงอัตโนมัติเมื่อมีการประชุมกำลังอัดเสียงสด) */
+    /* แถบทางลัด Live Now (แสดงจำนวนห้องและรายชื่อห้องที่กำลังประชุมสด/บันทึกเสียง AI วันนี้) */
     .live-banner-wrap {
       display: none;
       margin-bottom: 16px;
+    }
+    .live-idle-bar {
+      background: #FFFFFF;
+      border: 1px solid var(--slate-200);
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--slate-500);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
     }
     .live-banner-card {
       background: linear-gradient(135deg, #FEF2F2 0%, #FFF1F2 100%);
@@ -147,11 +90,18 @@
       padding: 14px 15px;
       box-shadow: 0 6px 18px rgba(220, 38, 38, 0.1);
     }
+    .live-banner-card.today-summary-only {
+      background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+      border-color: #A7F3D0;
+      box-shadow: 0 6px 18px rgba(5, 150, 105, 0.08);
+    }
     .live-banner-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
     }
     .live-pill {
       display: inline-flex;
@@ -159,10 +109,13 @@
       gap: 6px;
       background: #DC2626;
       color: #FFFFFF;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 700;
-      padding: 3px 10px;
+      padding: 4px 11px;
       border-radius: 999px;
+    }
+    .live-pill.done-pill {
+      background: #059669;
     }
     .live-dot {
       width: 7px;
@@ -175,6 +128,28 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.35; transform: scale(0.8); }
     }
+    .live-room-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .live-room-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #991B1B;
+      border: 1px solid #FCA5A5;
+    }
+    .live-room-chip.done-chip {
+      color: #065F46;
+      border-color: #6EE7B7;
+    }
     .live-item-row {
       background: #FFFFFF;
       border: 1px solid #FEE2E2;
@@ -185,6 +160,9 @@
       justify-content: space-between;
       gap: 10px;
       margin-top: 8px;
+    }
+    .live-item-row.done-row {
+      border-color: #D1FAE5;
     }
     .live-item-info {
       min-width: 0;
@@ -203,17 +181,39 @@
       color: var(--slate-500);
       margin-top: 2px;
     }
+    .live-agenda-tag {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #B91C1C;
+      background: #FEF2F2;
+      padding: 2px 7px;
+      border-radius: 6px;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .live-agenda-tag.done-tag {
+      color: #047857;
+      background: #ECFDF5;
+    }
     .btn-live-open {
       background: #DC2626;
       color: #FFFFFF;
       border: none;
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 9px 12px;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       flex-shrink: 0;
       box-shadow: 0 3px 10px rgba(220, 38, 38, 0.25);
+    }
+    .btn-live-open.done-btn {
+      background: #059669;
+      box-shadow: 0 3px 10px rgba(5, 150, 105, 0.22);
     }
 
     /* กล่องแสดงโปรไฟล์ LINE & ข้อความแนะนำ */
@@ -756,8 +756,8 @@
           <span style="font-size: 11px; color: #991B1B; font-weight: 600;">แตะเพื่อดูสรุปวาระสด</span>
         </div>
         <div id="liveNowList"></div>
-      </div>
-    </div>
+    <!-- แถบทางลัด: สถานะกำลังประชุมสด / การประชุมสำคัญที่มีบันทึกเสียงวันนี้ -->
+    <div id="liveNowContainer" class="live-banner-wrap"></div>
 
     <div class="card">
       <label for="bookingDate">เลือกวันที่ต้องการตรวจสอบ</label>
@@ -1058,56 +1058,136 @@
     };
 
     // -------------------------------------------------------------------------
-    // 1. ติดตามการประชุมที่กำลังอัดเสียงสดอยู่ตอนนี้ (แถบทางลัดด้านบนสุด)
+    // 1. ติดตามการประชุมที่กำลังอัดเสียงสด / บันทึกเสียงสำคัญวันนี้ (แถบด้านบนสุด)
     // -------------------------------------------------------------------------
-    function hasActiveAgenda(agendas) {
-      if (!Array.isArray(agendas)) return false;
-      return agendas.some(ag => {
-        if (ag.status === 'recording' || ag.status === 'processing' || ag.status === 'paused') return true;
+    function flattenAgendas(agendas) {
+      const list = [];
+      if (!Array.isArray(agendas)) return list;
+      agendas.forEach(ag => {
+        list.push(ag);
         if (Array.isArray(ag.subAgendas)) {
-          return ag.subAgendas.some(sub => sub.status === 'recording' || sub.status === 'processing' || sub.status === 'paused');
+          ag.subAgendas.forEach(sub => list.push(sub));
         }
-        return false;
       });
+      return list;
+    }
+
+    function hasActiveAgenda(agendas) {
+      return flattenAgendas(agendas).some(
+        n => n.status === 'recording' || n.status === 'processing' || n.status === 'paused'
+      );
+    }
+
+    function getMeetingLiveMeta(agendas) {
+      const nodes = flattenAgendas(agendas);
+      const activeNode = nodes.find(n => n.status === 'recording' || n.status === 'processing' || n.status === 'paused');
+      const doneCount = nodes.filter(n => n.status === 'done').length;
+      return { activeNode, doneCount, totalCount: nodes.length };
+    }
+
+    function toLocalDateStr(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     function subscribeLiveMeetingsBanner() {
       if (!db) return;
       db.collection('meetings').onSnapshot(
         (snapshot) => {
-          const liveMeetings = [];
+          const todayStr = getTodayDateStr();
+          const liveNowList = [];
+          const todayRecordedList = [];
+
           snapshot.forEach(doc => {
             const data = doc.data();
-            if (hasActiveAgenda(data.agendas)) {
-              liveMeetings.push({ id: doc.id, ...data });
+            const meta = getMeetingLiveMeta(data.agendas);
+            const isLive = Boolean(meta.activeNode);
+            const isTodayMeeting = toLocalDateStr(data.startTime) === todayStr;
+
+            if (isLive) {
+              liveNowList.push({ id: doc.id, ...data, _meta: meta, _isLive: true });
+            } else if (isTodayMeeting) {
+              // การประชุมสำคัญวันนี้ที่เปิดห้องบันทึกเสียงแล้ว (เช่น พักระหว่างวาระ หรือสรุปเสร็จแล้ว)
+              todayRecordedList.push({ id: doc.id, ...data, _meta: meta, _isLive: false });
             }
           });
 
           const container = document.getElementById('liveNowContainer');
-          const listEl = document.getElementById('liveNowList');
+          const combined = [...liveNowList, ...todayRecordedList];
 
-          if (liveMeetings.length === 0) {
-            container.style.display = 'none';
-            listEl.innerHTML = '';
+          // กรณีวันนี้ยังไม่มีห้องใดเปิดบันทึกเสียง AI
+          if (combined.length === 0) {
+            container.style.display = 'block';
+            container.innerHTML = `
+              <div class="live-idle-bar">
+                <span><i class="fa-solid fa-tower-broadcast" style="color:#94A3B8; margin-right:6px;"></i>สถานะประชุมสดวันนี้</span>
+                <span style="font-weight:700; color:#64748B;">ยังไม่มีห้องที่เปิดบันทึกเสียง AI</span>
+              </div>`;
             return;
           }
 
-          container.style.display = 'block';
-          listEl.innerHTML = liveMeetings.map(m => {
+          const hasAnyLive = liveNowList.length > 0;
+          const uniqueRooms = [...new Set(combined.map(m => m.room || 'ไม่ระบุห้องประชุม'))];
+
+          const headerPillHtml = hasAnyLive
+            ? `<span class="live-pill"><span class="live-dot"></span> กำลังประชุมสด ${liveNowList.length} ห้อง</span>`
+            : `<span class="live-pill done-pill"><i class="fa-solid fa-wand-magic-sparkles"></i> ประชุมสำคัญที่มีบันทึก AI วันนี้ ${todayRecordedList.length} ห้อง</span>`;
+
+          const subRightText = hasAnyLive && todayRecordedList.length > 0
+            ? `ทั้งหมดวันนี้ ${combined.length} ห้อง`
+            : 'แตะเพื่อติดตามสรุปวาระ';
+
+          const chipsHtml = uniqueRooms.map(roomName => {
+            const roomIsLive = liveNowList.some(m => (m.room || 'ไม่ระบุห้องประชุม') === roomName);
+            return `<span class="live-room-chip ${roomIsLive ? '' : 'done-chip'}">
+              <i class="fa-solid ${roomIsLive ? 'fa-microphone-lines' : 'fa-check-circle'}"></i> ${escapeHtml(roomName)}
+            </span>`;
+          }).join('');
+
+          const rowsHtml = combined.map(m => {
             const safeRoom = escapeHtml(m.room || 'ห้องประชุม');
             const safeTitle = escapeHtml(m.title || '(ไม่ระบุหัวข้อ)');
             const roomArg = encodeURIComponent(m.room || '');
+            const activeNode = m._meta.activeNode;
+
+            let statusTagHtml = '';
+            if (activeNode) {
+              const stLabel = activeNode.status === 'processing'
+                ? '⏳ AI กำลังสรุป'
+                : activeNode.status === 'paused'
+                  ? '⏸️ พักชั่วคราว'
+                  : '🔴 กำลังอัด';
+              const agCode = activeNode.code || activeNode.number || '';
+              statusTagHtml = `<div class="live-agenda-tag">${stLabel} • วาระ ${escapeHtml(agCode)}: ${escapeHtml(activeNode.title)}</div>`;
+            } else {
+              statusTagHtml = `<div class="live-agenda-tag done-tag">✅ สรุปแล้ว ${m._meta.doneCount}/${m._meta.totalCount} วาระ${m.docUrl ? ' • มี Google Docs' : ''}</div>`;
+            }
+
             return `
-              <div class="live-item-row">
+              <div class="live-item-row ${m._isLive ? '' : 'done-row'}">
                 <div class="live-item-info">
                   <div class="live-item-title">${safeTitle}</div>
-                  <div class="live-item-meta">📍 ${safeRoom} • กำลังสรุปวาระสด</div>
+                  <div class="live-item-meta">📍 ${safeRoom}</div>
+                  ${statusTagHtml}
                 </div>
-                <button class="btn-live-open" onclick="openReportViewer('${encodeURIComponent(m.id)}', '${roomArg}')">
-                  <i class="fa-solid fa-play"></i> ดูสด
+                <button class="btn-live-open ${m._isLive ? '' : 'done-btn'}" onclick="openReportViewer('${encodeURIComponent(m.id)}', '${roomArg}')">
+                  <i class="fa-solid ${m._isLive ? 'fa-play' : 'fa-file-lines'}"></i> ${m._isLive ? 'ติดตามสด' : 'ดูสรุป'}
                 </button>
               </div>`;
           }).join('');
+
+          container.style.display = 'block';
+          container.innerHTML = `
+            <div class="live-banner-card ${hasAnyLive ? '' : 'today-summary-only'}">
+              <div class="live-banner-header">
+                ${headerPillHtml}
+                <span style="font-size: 11px; color: ${hasAnyLive ? '#991B1B' : '#065F46'}; font-weight: 600;">${subRightText}</span>
+              </div>
+              <div class="live-room-chips">${chipsHtml}</div>
+              <div>${rowsHtml}</div>
+            </div>`;
         },
         (err) => console.warn('Live banner listener warning:', err)
       );
