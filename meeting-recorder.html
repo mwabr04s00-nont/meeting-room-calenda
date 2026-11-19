@@ -75,6 +75,11 @@
           <i class="fa-solid fa-microphone text-rose-500"></i>
           <span id="topTotalTimer">00:00:00</span>
         </div>
+        <!-- ปุ่มตั้งค่าและทดสอบไมโครโฟน (Setup) -->
+        <button id="topAudioSetupBtn" onclick="openAudioSetupModal()" title="ตั้งค่าและทดสอบสัญญาณไมโครโฟน" class="hidden p-2 sm:px-3 sm:py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 border border-slate-200">
+          <i class="fa-solid fa-gear"></i>
+          <span class="hidden xl:inline">ตั้งค่าไมค์</span>
+        </button>
         <!-- ปุ่มส่งออก Google Docs -->
         <button id="topExportBtn" onclick="exportToGoogleDocs()" title="สร้างเอกสาร Google Docs" class="hidden p-2 sm:px-3 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 border border-slate-200">
           <i class="fa-solid fa-download"></i>
@@ -115,6 +120,9 @@
             </button>
             <button onclick="openArchiveLink()" id="nav-archive" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
               <i class="fa-solid fa-clock-rotate-left w-4 text-center"></i> ปฏิทิน / คลังรายงาน
+            </button>
+            <button onclick="openAudioSetupModal()" id="nav-setup" class="hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+              <i class="fa-solid fa-sliders w-4 text-center"></i> ตั้งค่าไมค์ (Audio Setup)
             </button>
           </nav>
         </div>
@@ -445,6 +453,83 @@
     </div>
   </div>
 
+  <!-- MODAL 4: ตั้งค่าและทดสอบสัญญาณไมโครโฟน (Audio Setup) -->
+  <div id="audioSetupModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3.5">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-microphone-lines"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">ตั้งค่าและทดสอบสัญญาณเสียงขาเข้า</h3>
+            <p class="text-xs text-slate-500">เลือกไมโครโฟนและทดสอบระดับเสียงก่อนเริ่มบันทึกจริง</p>
+          </div>
+        </div>
+        <button onclick="closeAudioSetupModal()" class="text-slate-400 hover:text-slate-700 text-lg p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- เลือกอุปกรณ์ไมโครโฟน -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-bold text-slate-700">อุปกรณ์ไมโครโฟน (Microphone Input)</label>
+          <button onclick="loadAudioInputDevices(true)" class="text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1">
+            <i class="fa-solid fa-rotate-right"></i> รีเฟรชรายชื่อ
+          </button>
+        </div>
+        <select id="micDeviceSelect" onchange="onMicSelectionChanged()" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="">กำลังค้นหาอุปกรณ์ไมโครโฟน...</option>
+        </select>
+      </div>
+
+      <!-- กล่องวัดระดับสัญญาณเสียงขาเข้า (Live VU Meter) -->
+      <div class="bg-[#f8faff] border border-indigo-100 rounded-xl p-4 space-y-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-indigo-950 flex items-center gap-1.5">
+            <i class="fa-solid fa-signal text-indigo-600"></i> ระดับสัญญาณเสียงขาเข้า (Input Level)
+          </span>
+          <span id="testDbReadout" class="font-mono font-bold text-slate-600">-∞ dB</span>
+        </div>
+
+        <!-- แถบ VU Meter -->
+        <div class="w-full h-4 bg-slate-200 rounded-full overflow-hidden p-0.5">
+          <div id="testMeterFill" class="h-full rounded-full transition-all duration-75 bg-emerald-500" style="width: 0%;"></div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2">
+          <span id="testSignalHint" class="text-[11px] text-slate-500">กดปุ่ม "เริ่มทดสอบไมค์" แล้วลองพูดเพื่อตรวจสอบสัญญาณ</span>
+          <button id="btnToggleMicTest" onclick="toggleMicTest()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 flex-shrink-0">
+            <i class="fa-solid fa-microphone"></i> เริ่มทดสอบไมค์
+          </button>
+        </div>
+      </div>
+
+      <!-- ตัวเลือกปรับแต่งคุณภาพเสียง -->
+      <div class="space-y-2">
+        <p class="text-xs font-bold text-slate-700">การประมวลผลสัญญาณเสียง (Audio Processing)</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+          <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white">
+            <input type="checkbox" id="optNoiseSuppression" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+            <span class="font-semibold text-slate-700">ตัดเสียงรบกวน</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white">
+            <input type="checkbox" id="optEchoCancellation" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+            <span class="font-semibold text-slate-700">ตัดเสียงสะท้อน</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white">
+            <input type="checkbox" id="optAutoGain" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+            <span class="font-semibold text-slate-700">ปรับความดังอัตโนมัติ</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex gap-2.5 pt-2 border-t border-slate-100">
+        <button onclick="closeAudioSetupModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">ปิดหน้าต่าง</button>
+        <button onclick="saveAudioSetup()" class="flex-[1.5] py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition">บันทึกการตั้งค่าไมค์</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================================================================
     // 🔴🔴🔴 ตั้งค่า API และลิงก์หน้าปฏิทินตรงนี้ 🔴🔴🔴
@@ -496,11 +581,24 @@
     let speechRecognition = null;
     let liveTranscriptText = '';
 
+    // การตั้งค่าไมโครโฟนและโหมดทดสอบสัญญาณ (Audio Setup)
+    let audioSettings = {
+      deviceId: '',
+      noiseSuppression: true,
+      echoCancellation: true,
+      autoGainControl: true
+    };
+    let testMicStream = null;
+    let testAudioCtx = null;
+    let testAnalyser = null;
+    let testAnimId = null;
+
     // -------------------------------------------------------------------------
     // เริ่มต้นระบบเมื่อโหลดหน้าเว็บ
     // -------------------------------------------------------------------------
     window.onload = async () => {
       document.getElementById('backToCalendarBtn').href = CALENDAR_PAGE_URL;
+      loadSavedAudioSettings();
       initVisualizerBars();
 
       if (!currentEventId) {
@@ -521,6 +619,8 @@
         document.getElementById('recordingEngineCard').classList.remove('hidden');
         document.getElementById('agendaHeaderButtons').classList.remove('hidden');
         document.getElementById('endMeetingCard').classList.remove('hidden');
+        document.getElementById('topAudioSetupBtn').classList.remove('hidden');
+        document.getElementById('nav-setup').classList.remove('hidden');
         document.getElementById('topExportBtn').classList.remove('hidden');
         document.getElementById('topEndMeetingBtn').classList.remove('hidden');
       } else {
@@ -1261,7 +1361,7 @@
       if (!found) return;
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: buildAudioConstraints() });
         const mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
         const chosenMime = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
         const options = chosenMime ? { mimeType: chosenMime, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 };
@@ -1587,6 +1687,184 @@
       } catch (e) {
         showToast('เชื่อมต่อเพื่อสร้างเอกสารไม่สำเร็จ: ' + e.message, 'error');
       }
+    }
+
+    // -------------------------------------------------------------------------
+    // ระบบตั้งค่าและทดสอบสัญญาณไมโครโฟน (Audio Setup & Live Input Check)
+    // -------------------------------------------------------------------------
+    function loadSavedAudioSettings() {
+      try {
+        const saved = localStorage.getItem('agendavoice_audio_settings');
+        if (saved) audioSettings = { ...audioSettings, ...JSON.parse(saved) };
+      } catch (e) {}
+    }
+
+    function buildAudioConstraints() {
+      const constraints = {
+        noiseSuppression: audioSettings.noiseSuppression,
+        echoCancellation: audioSettings.echoCancellation,
+        autoGainControl: audioSettings.autoGainControl
+      };
+      if (audioSettings.deviceId) {
+        constraints.deviceId = { ideal: audioSettings.deviceId };
+      }
+      return constraints;
+    }
+
+    async function openAudioSetupModal() {
+      if (recordingAgendaId) {
+        return showToast('กรุณากด "จบวาระนี้" ก่อนเปลี่ยนการตั้งค่าไมโครโฟนครับ', 'warning');
+      }
+      document.getElementById('optNoiseSuppression').checked = audioSettings.noiseSuppression;
+      document.getElementById('optEchoCancellation').checked = audioSettings.echoCancellation;
+      document.getElementById('optAutoGain').checked = audioSettings.autoGainControl;
+      document.getElementById('audioSetupModal').classList.remove('hidden');
+      await loadAudioInputDevices(false);
+    }
+
+    function closeAudioSetupModal() {
+      stopMicTest();
+      closeModal('audioSetupModal');
+    }
+
+    async function loadAudioInputDevices(requestPermission) {
+      const selectEl = document.getElementById('micDeviceSelect');
+      try {
+        if (requestPermission) {
+          const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          tempStream.getTracks().forEach(t => t.stop());
+        }
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(d => d.kind === 'audioinput');
+
+        if (!audioInputs.length) {
+          selectEl.innerHTML = `<option value="">ไม่พบอุปกรณ์ไมโครโฟนในเครื่อง</option>`;
+          return;
+        }
+
+        // หากยังไม่ได้ขอสิทธิ์ ชื่ออุปกรณ์จะว่าง ให้แจ้งผู้ใช้กดทดสอบไมค์เพื่อดูชื่อจริง
+        selectEl.innerHTML = `<option value="">ค่าเริ่มต้นของระบบ (Default Microphone)</option>` +
+          audioInputs.map((d, idx) => {
+            const label = d.label || `ไมโครโฟน #${idx + 1} (กดเริ่มทดสอบเพื่อแสดงชื่ออุปกรณ์)`;
+            const selected = (d.deviceId && d.deviceId === audioSettings.deviceId) ? 'selected' : '';
+            return `<option value="${escapeHtml(d.deviceId)}" ${selected}>${escapeHtml(label)}</option>`;
+          }).join('');
+      } catch (err) {
+        selectEl.innerHTML = `<option value="">ไม่สามารถอ่านรายชื่อไมโครโฟนได้</option>`;
+        showToast('ไม่สามารถเข้าถึงรายชื่อไมโครโฟน: ' + err.message, 'error');
+      }
+    }
+
+    function onMicSelectionChanged() {
+      // หากกำลังทดสอบอยู่ ให้รีสตาร์ทการทดสอบด้วยไมค์ตัวที่เพิ่งเลือกใหม่ทันที
+      if (testMicStream) {
+        stopMicTest();
+        toggleMicTest();
+      }
+    }
+
+    async function toggleMicTest() {
+      if (testMicStream) {
+        stopMicTest();
+        return;
+      }
+
+      const btn = document.getElementById('btnToggleMicTest');
+      const hintEl = document.getElementById('testSignalHint');
+      const selectedId = document.getElementById('micDeviceSelect').value;
+
+      try {
+        const testConstraints = {
+          noiseSuppression: document.getElementById('optNoiseSuppression').checked,
+          echoCancellation: document.getElementById('optEchoCancellation').checked,
+          autoGainControl: document.getElementById('optAutoGain').checked
+        };
+        if (selectedId) testConstraints.deviceId = { exact: selectedId };
+
+        testMicStream = await navigator.mediaDevices.getUserMedia({ audio: testConstraints });
+
+        // โหลดรายชื่อไมค์อีกครั้งหลังได้รับสิทธิ์ เพื่อให้แสดงชื่ออุปกรณ์จริงครบถ้วน
+        const currentSelected = selectedId;
+        await loadAudioInputDevices(false);
+        if (currentSelected) document.getElementById('micDeviceSelect').value = currentSelected;
+
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        testAudioCtx = new AudioContextClass();
+        testAnalyser = testAudioCtx.createAnalyser();
+        testAnalyser.fftSize = 256;
+        const source = testAudioCtx.createMediaStreamSource(testMicStream);
+        source.connect(testAnalyser);
+
+        const dataArray = new Uint8Array(testAnalyser.frequencyBinCount);
+        const meterFill = document.getElementById('testMeterFill');
+        const dbReadout = document.getElementById('testDbReadout');
+
+        btn.className = 'px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 flex-shrink-0';
+        btn.innerHTML = '<i class="fa-solid fa-stop"></i> หยุดทดสอบ';
+
+        function updateMeter() {
+          testAnimId = requestAnimationFrame(updateMeter);
+          testAnalyser.getByteTimeDomainData(dataArray);
+          let sumSq = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const norm = (dataArray[i] - 128) / 128;
+            sumSq += norm * norm;
+          }
+          const rms = Math.sqrt(sumSq / dataArray.length);
+          const percent = Math.min(100, Math.round(rms * 280));
+          const db = rms > 0.0001 ? (20 * Math.log10(rms)).toFixed(1) : '-∞';
+
+          meterFill.style.width = `${percent}%`;
+          dbReadout.innerText = `${db} dB`;
+
+          if (percent > 85) {
+            meterFill.className = 'h-full rounded-full transition-all duration-75 bg-rose-500';
+            hintEl.innerHTML = '<span class="text-rose-600 font-bold">⚠️ เสียงดังเกินไป (อาจแตก) กรุณาลด Gain หรือขยับห่างไมค์</span>';
+          } else if (percent >= 12) {
+            meterFill.className = 'h-full rounded-full transition-all duration-75 bg-emerald-500';
+            hintEl.innerHTML = '<span class="text-emerald-700 font-bold">✅ สัญญาณเสียงเข้าชัดเจน พร้อมบันทึกการประชุม</span>';
+          } else {
+            meterFill.className = 'h-full rounded-full transition-all duration-75 bg-amber-400';
+            hintEl.innerHTML = '<span class="text-amber-700">เงียบ / เสียงเบา ลองพูดใส่ไมโครโฟนเพื่อทดสอบ</span>';
+          }
+        }
+        updateMeter();
+      } catch (err) {
+        stopMicTest();
+        showToast('ไม่สามารถเปิดไมโครโฟนได้: ' + err.message, 'error');
+      }
+    }
+
+    function stopMicTest() {
+      if (testAnimId) { cancelAnimationFrame(testAnimId); testAnimId = null; }
+      if (testAudioCtx) { testAudioCtx.close().catch(() => {}); testAudioCtx = null; }
+      if (testMicStream) {
+        testMicStream.getTracks().forEach(t => t.stop());
+        testMicStream = null;
+      }
+      const meterFill = document.getElementById('testMeterFill');
+      const dbReadout = document.getElementById('testDbReadout');
+      const hintEl = document.getElementById('testSignalHint');
+      const btn = document.getElementById('btnToggleMicTest');
+      if (meterFill) meterFill.style.width = '0%';
+      if (dbReadout) dbReadout.innerText = '-∞ dB';
+      if (hintEl) hintEl.innerText = 'กดปุ่ม "เริ่มทดสอบไมค์" แล้วลองพูดเพื่อตรวจสอบสัญญาณ';
+      if (btn) {
+        btn.className = 'px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 flex-shrink-0';
+        btn.innerHTML = '<i class="fa-solid fa-microphone"></i> เริ่มทดสอบไมค์';
+      }
+    }
+
+    function saveAudioSetup() {
+      audioSettings.deviceId = document.getElementById('micDeviceSelect').value || '';
+      audioSettings.noiseSuppression = document.getElementById('optNoiseSuppression').checked;
+      audioSettings.echoCancellation = document.getElementById('optEchoCancellation').checked;
+      audioSettings.autoGainControl = document.getElementById('optAutoGain').checked;
+      try {
+        localStorage.setItem('agendavoice_audio_settings', JSON.stringify(audioSettings));
+      } catch (e) {}
+      closeAudioSetupModal();
+      showToast('บันทึกการตั้งค่าไมโครโฟนเรียบร้อยแล้ว', 'success');
     }
   </script>
 </body>
