@@ -692,7 +692,7 @@
         </div>
 
         <div class="w-full h-4 bg-slate-200 rounded-full overflow-hidden p-0.5">
-          <div id="testMeterFill" class="h-full rounded-full transition-all duration-75 bg-emerald-500" style="width: 0%;"></div>
+          <div id="testMeterFill" class="h-full rounded-full transition-all duration-150 ease-out bg-emerald-500" style="width: 0%;"></div>
         </div>
 
         <div class="flex items-center justify-between gap-2">
@@ -700,6 +700,26 @@
           <button id="btnToggleMicTest" onclick="toggleMicTest()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 flex-shrink-0">
             <i class="fa-solid fa-microphone"></i> เริ่มทดสอบไมค์
           </button>
+        </div>
+      </div>
+
+      <!-- สไลด์ปรับความดังสัญญาณไมโครโฟนด้วยตัวเอง (Manual Input Gain) -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <label for="micGainSlider" class="font-bold text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-sliders text-indigo-600"></i> ปรับความดังไมโครโฟน (Input Gain)
+          </label>
+          <div class="flex items-center gap-2">
+            <span id="micGainValue" class="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">100%</span>
+            <button type="button" onclick="resetMicGain()" class="text-[11px] font-bold text-slate-500 hover:text-indigo-600 underline">รีเซ็ต</button>
+          </div>
+        </div>
+        <input type="range" id="micGainSlider" min="50" max="300" step="10" value="100" oninput="onMicGainInput(this.value)" class="w-full accent-indigo-600 cursor-pointer">
+        <div class="flex justify-between text-[10px] text-slate-400 font-medium px-0.5">
+          <span>50% (ลดเสียง)</span>
+          <span>100% (ปกติ)</span>
+          <span>200% (ขยาย 2x)</span>
+          <span>300% (ขยายสูงสุด)</span>
         </div>
       </div>
 
@@ -733,13 +753,14 @@
     // 🔴🔴🔴 ตั้งค่า API และลิงก์หน้าปฏิทินตรงนี้ 🔴🔴🔴
     // =========================================================================
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx71uwm3eL1WcdWKlwbMLEEyWYxUQD7_QIqLBnB6_jKw6uPSjOvzF1DQneUvC2Zr_POIQ/exec";
-    const CALENDAR_PAGE_URL = "q2-calendar.html";
-    const LIFF_ID = "";
+    const CALENDAR_PAGE_URL = "q2-calendar.html"; // ลิงก์กลับหน้าปฏิทินรวม
+    const LIFF_ID = "2012271332-6nSif7Sl";
     const firebaseConfig = {
       apiKey: "AIzaSyCZDd23UFQcXfjCOE3_mbCE9YyYTst8dU0",
       authDomain: "meeting-rec-and-report.firebaseapp.com",
       projectId: "meeting-rec-and-report"
     };
+
 
     // เชื่อมต่อ Firebase Firestore แบบปลอดภัย
     let db = null;
@@ -791,14 +812,18 @@
     // การตั้งค่าไมโครโฟน (Audio Setup)
     let audioSettings = {
       deviceId: '',
+      gain: 1.0,
       noiseSuppression: true,
       echoCancellation: true,
       autoGainControl: true
     };
     let testMicStream = null;
     let testAudioCtx = null;
+    let testGainNode = null;
     let testAnalyser = null;
     let testAnimId = null;
+    let recordAudioCtx = null;
+    let recordGainNode = null;
 
     // -------------------------------------------------------------------------
     // เริ่มต้นระบบเมื่อโหลดหน้าเว็บ
@@ -1580,7 +1605,24 @@
 
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
-        mediaRecorder = new MediaRecorder(mediaStream, { mimeType, audioBitsPerSecond: 32000 });
+
+        // ส่งเสียงผ่าน GainNode เพื่อขยายความดังตามสไลด์ที่ตั้งไว้ก่อนอัดลงไฟล์จริง
+        let streamToRecord = mediaStream;
+        try {
+          recordAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const sourceNode = recordAudioCtx.createMediaStreamSource(mediaStream);
+          recordGainNode = recordAudioCtx.createGain();
+          recordGainNode.gain.value = Number(audioSettings.gain || 1.0);
+          const destNode = recordAudioCtx.createMediaStreamDestination();
+          sourceNode.connect(recordGainNode);
+          recordGainNode.connect(destNode);
+          streamToRecord = destNode.stream;
+        } catch (gainErr) {
+          console.warn('GainNode fallback to raw stream:', gainErr);
+          streamToRecord = mediaStream;
+        }
+
+        mediaRecorder = new MediaRecorder(streamToRecord, { mimeType, audioBitsPerSecond: 32000 });
         audioChunks = [];
         mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.start(1000);
@@ -1592,7 +1634,7 @@
         found.node.status = 'recording';
         await saveAgendasToFirestore();
 
-        startVisualizer(mediaStream);
+        startVisualizer(streamToRecord);
         startLiveSpeechRecognition();
         document.getElementById('visualizerStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> กำลังบันทึกเสียงเข้าสู่ระบบ...';
 
@@ -1690,6 +1732,7 @@
       mediaRecorder.onstop = async () => {
         const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
         if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        if (recordAudioCtx) { try { recordAudioCtx.close(); } catch (e) {} recordAudioCtx = null; recordGainNode = null; }
         mediaRecorder = null;
         recordingAgendaId = null;
         isPaused = false;
@@ -2059,8 +2102,39 @@
       document.getElementById('optNoiseSuppression').checked = audioSettings.noiseSuppression;
       document.getElementById('optEchoCancellation').checked = audioSettings.echoCancellation;
       document.getElementById('optAutoGain').checked = audioSettings.autoGainControl;
+      const gainPct = Math.round(Number(audioSettings.gain || 1.0) * 100);
+      const slider = document.getElementById('micGainSlider');
+      if (slider) slider.value = gainPct;
+      updateMicGainLabel(gainPct);
       document.getElementById('audioSetupModal').classList.remove('hidden');
       loadAudioInputDevices(false);
+    }
+
+    function updateMicGainLabel(pct) {
+      const lbl = document.getElementById('micGainValue');
+      if (!lbl) return;
+      const num = Number(pct || 100);
+      lbl.innerText = num === 100 ? '100% (ปกติ)' : `${num}%`;
+    }
+
+    function onMicGainInput(val) {
+      const pct = Number(val || 100);
+      const gainFactor = pct / 100;
+      audioSettings.gain = gainFactor;
+      updateMicGainLabel(pct);
+      // ปรับความดังสดทันทีหากกำลังทดสอบไมค์หรือกำลังบันทึกเสียงอยู่
+      if (testGainNode && testAudioCtx) {
+        testGainNode.gain.setTargetAtTime(gainFactor, testAudioCtx.currentTime, 0.03);
+      }
+      if (recordGainNode && recordAudioCtx) {
+        recordGainNode.gain.setTargetAtTime(gainFactor, recordAudioCtx.currentTime, 0.03);
+      }
+    }
+
+    function resetMicGain() {
+      const slider = document.getElementById('micGainSlider');
+      if (slider) slider.value = 100;
+      onMicGainInput(100);
     }
 
     function closeAudioSetupModal() {
@@ -2118,15 +2192,26 @@
 
         testAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const src = testAudioCtx.createMediaStreamSource(testMicStream);
+        testGainNode = testAudioCtx.createGain();
+        const sliderVal = Number(document.getElementById('micGainSlider')?.value || 100);
+        testGainNode.gain.value = sliderVal / 100;
+
         testAnalyser = testAudioCtx.createAnalyser();
-        testAnalyser.fftSize = 256;
-        src.connect(testAnalyser);
+        testAnalyser.fftSize = 512;
+        testAnalyser.smoothingTimeConstant = 0.85;
+        src.connect(testGainNode);
+        testGainNode.connect(testAnalyser);
 
         const data = new Uint8Array(testAnalyser.frequencyBinCount);
         btn.className = 'px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 flex-shrink-0';
         btn.innerHTML = '<i class="fa-solid fa-stop"></i> หยุดทดสอบ';
 
-        const loop = () => {
+        // หน่วงค่า Meter ให้นุ่มนวลและอัปเดตตัวเลข/คำแนะนำทุก 220ms เพื่อให้อ่านง่าย
+        let smoothedPct = 0;
+        let smoothedRms = 0;
+        let lastTextUpdate = 0;
+
+        const loop = (timestamp) => {
           if (!testAnalyser) return;
           testAnimId = requestAnimationFrame(loop);
           testAnalyser.getByteTimeDomainData(data);
@@ -2136,16 +2221,30 @@
             sumSq += v * v;
           }
           const rms = Math.sqrt(sumSq / data.length);
-          const pct = Math.min(100, Math.round(rms * 260));
-          const db = rms > 0.0001 ? (20 * Math.log10(rms)).toFixed(1) : '-∞';
+          const rawPct = Math.min(100, rms * 280);
 
+          // Attack ปานกลาง (0.22) และ Release ช้าลง (0.05) ให้เข็มตกลงนุ่มๆ ไม่กระตุก
+          const coeff = rawPct > smoothedPct ? 0.22 : 0.05;
+          smoothedPct = smoothedPct + (rawPct - smoothedPct) * coeff;
+          smoothedRms = smoothedRms + (rms - smoothedRms) * coeff;
+
+          const displayPct = Math.round(smoothedPct);
           const fill = document.getElementById('testMeterFill');
-          fill.style.width = `${pct}%`;
-          fill.className = `h-full rounded-full transition-all duration-75 ${pct > 85 ? 'bg-rose-500' : pct > 15 ? 'bg-emerald-500' : 'bg-amber-400'}`;
-          document.getElementById('testDbReadout').innerText = `${db} dB`;
-          hint.innerText = pct > 85 ? '⚠️ เสียงดังเกินไป อาจแตกพร่า' : pct > 15 ? '✅ สัญญาณเสียงเข้าชัดเจนดีมาก' : '🔈 เสียงค่อนข้างเบา ลองพูดใกล้ไมค์ขึ้น';
+          fill.style.width = `${displayPct}%`;
+          fill.className = `h-full rounded-full transition-all duration-150 ease-out ${displayPct > 85 ? 'bg-rose-500' : displayPct > 15 ? 'bg-emerald-500' : 'bg-amber-400'}`;
+
+          if (!lastTextUpdate || timestamp - lastTextUpdate >= 220) {
+            lastTextUpdate = timestamp;
+            const db = smoothedRms > 0.0002 ? (20 * Math.log10(smoothedRms)).toFixed(1) : '-∞';
+            document.getElementById('testDbReadout').innerText = `${db} dB`;
+            hint.innerText = displayPct > 85
+              ? '⚠️ เสียงดังเกินไป อาจแตกพร่า (ลองลดสไลด์ลง)'
+              : displayPct > 15
+                ? '✅ สัญญาณเสียงเข้าชัดเจนดีมาก'
+                : '🔈 เสียงค่อนข้างเบา ลองเลื่อนสไลด์เพิ่มความดังขึ้น';
+          }
         };
-        loop();
+        testAnimId = requestAnimationFrame(loop);
       } catch (err) {
         showToast('ทดสอบไมค์ไม่ได้: ' + err.message, 'error');
       }
@@ -2153,7 +2252,7 @@
 
     function stopMicTest() {
       if (testAnimId) { cancelAnimationFrame(testAnimId); testAnimId = null; }
-      if (testAudioCtx) { try { testAudioCtx.close(); } catch (e) {} testAudioCtx = null; testAnalyser = null; }
+      if (testAudioCtx) { try { testAudioCtx.close(); } catch (e) {} testAudioCtx = null; testGainNode = null; testAnalyser = null; }
       if (testMicStream) { testMicStream.getTracks().forEach(t => t.stop()); testMicStream = null; }
       const btn = document.getElementById('btnToggleMicTest');
       if (btn) {
@@ -2169,8 +2268,10 @@
     }
 
     function saveAudioSetup() {
+      const sliderVal = Number(document.getElementById('micGainSlider')?.value || 100);
       audioSettings = {
         deviceId: document.getElementById('micDeviceSelect').value || '',
+        gain: sliderVal / 100,
         noiseSuppression: document.getElementById('optNoiseSuppression').checked,
         echoCancellation: document.getElementById('optEchoCancellation').checked,
         autoGainControl: document.getElementById('optAutoGain').checked
