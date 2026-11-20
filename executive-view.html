@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Executive Live View — ติดตามรายงานการประชุมอัจฉริยะ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    @font-face {
+      font-family: 'LINESeedSansTH';
+      src: url('https://cdn.jsdelivr.net/gh/lazywasabi/line-seed-sans-th@main/fonts/LINESeedSansTH_W_Rg.woff2') format('woff2');
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'LINESeedSansTH';
+      src: url('https://cdn.jsdelivr.net/gh/lazywasabi/line-seed-sans-th@main/fonts/LINESeedSansTH_W_Bd.woff2') format('woff2');
+      font-weight: 700;
+      font-display: swap;
+    }
+    body {
+      font-family: 'LINESeedSansTH', 'Prompt', 'Sarabun', sans-serif;
+      background-color: #f4f6fb;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* แอนิเมชันคลื่นเสียงจำลองสถานะการบันทึกสด */
+    @keyframes waveBounce {
+      0%, 100% { transform: scaleY(0.3); }
+      50% { transform: scaleY(1); }
+    }
+    .wave-bar {
+      animation: waveBounce 1.1s ease-in-out infinite;
+      transform-origin: bottom;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center bg-slate-100">
+
+  <!-- โครงหน้าจอมือถือ (Mobile App Shell) -->
+  <div class="w-full max-w-md min-h-screen bg-[#f4f6fb] flex flex-col relative shadow-xl">
+
+    <!-- Toast แจ้งเตือน -->
+    <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[92%] max-w-sm flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top App Header -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3">
+      <div class="flex items-center justify-between gap-2">
+        <button onclick="goBackToLiff()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 transition" title="กลับหน้าจองห้องประชุม">
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+        <div class="min-w-0 flex-1 text-center">
+          <p id="headerRoomMeta" class="text-[11px] font-bold text-indigo-600 truncate">กำลังเชื่อมต่อ...</p>
+          <h1 id="headerMeetingTitle" class="text-sm font-extrabold text-slate-900 truncate">กำลังโหลดข้อมูลการประชุม...</h1>
+        </div>
+        <div id="headerLiveBadge" class="flex-shrink-0">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> รอเริ่ม
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- หน้าจอแจ้งเตือนกรณีไม่มี eventId -->
+    <div id="invalidState" class="hidden flex-1 flex flex-col items-center justify-center p-6 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-4">
+        <i class="fa-solid fa-calendar-xmark"></i>
+      </div>
+      <h2 class="text-base font-bold text-slate-800 mb-1">ไม่พบรหัสการประชุม</h2>
+      <p class="text-xs text-slate-500 mb-5">กรุณาเปิดหน้ารายงานนี้จากหน้าจองห้องประชุม (LINE LIFF) หรือลิงก์ที่เลขาฯ แชร์ให้</p>
+      <button onclick="goBackToLiff()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm">
+        กลับไปหน้าจองห้องประชุม
+      </button>
+    </div>
+
+    <!-- พื้นที่เนื้อหาหลัก (สลับตาม 4 แท็บด้านล่าง) -->
+    <main id="appContent" class="hidden flex-1 px-4 pt-4 pb-24 space-y-4">
+
+      <!-- =================================================================== -->
+      <!-- TAB 1: ติดตามวาระ (Live Agenda View)                                 -->
+      <!-- =================================================================== -->
+      <section id="tab-agenda" class="space-y-4">
+        <!-- การ์ดวาระที่กำลังพิจารณา + คลื่นเสียง + ปุ่มยกมือ/โน้ตถึงเลขาฯ -->
+        <div class="bg-white rounded-2xl border border-indigo-100 shadow-sm p-4 space-y-3.5 relative overflow-hidden">
+          <div class="flex items-center justify-between gap-2">
+            <span id="heroStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span> พร้อมติดตามวาระ
+            </span>
+            <span id="heroAgendaCode" class="text-xs font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg">วาระ -</span>
+          </div>
+
+          <div>
+            <h2 id="heroAgendaTitle" class="text-base font-extrabold text-slate-900 leading-snug">กำลังโหลดวาระการประชุม...</h2>
+            <p id="heroMeetingSub" class="text-xs text-slate-500 mt-1">📍 - • 📅 -</p>
+          </div>
+
+          <!-- กล่องสถานะสัญญาณเสียงสด / ไฟล์เสียง -->
+          <div id="heroWaveBox" class="bg-[#f7f9ff] border border-indigo-100/80 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-[11px]">
+              <span id="heroWaveLabel" class="font-bold text-indigo-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-wave-square text-indigo-600"></i> สถานะการบันทึกเสียงในห้องประชุม
+              </span>
+              <span id="heroDurationText" class="font-mono font-bold text-slate-600">00:00</span>
+            </div>
+            <div id="heroWaveBars" class="h-8 flex items-end justify-between gap-1 px-0.5"></div>
+          </div>
+
+          <!-- ปุ่มโต้ตอบแบบ Real-time ถึงหน้าจอเลขาฯ -->
+          <div class="grid grid-cols-2 gap-2.5 pt-0.5">
+            <button onclick="triggerRaiseHand()" class="py-2.5 px-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5 active:scale-95">
+              <i class="fa-solid fa-hand"></i> ยกมือขออภิปราย
+            </button>
+            <button onclick="openNoteModal()" class="py-2.5 px-3 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95">
+              <i class="fa-regular fa-note-sticky"></i> โน้ตถึงเลขาฯ
+            </button>
+          </div>
+        </div>
+
+        <!-- หัวข้อรายการวาระทั้งหมด -->
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-extrabold text-slate-900">วาระการประชุม</h3>
+            <span id="agendaCountPill" class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold">0 วาระ</span>
+          </div>
+          <span id="agendaProgressText" class="text-[11px] font-semibold text-slate-500">สรุปแล้ว 0/0</span>
+        </div>
+
+        <!-- รายการวาระแบบต้นไม้ (Agenda Tree) -->
+        <div id="mobileAgendaTree" class="space-y-3"></div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 2: สรุป AI (AI Insights & Voice TTS Player)                     -->
+      <!-- =================================================================== -->
+      <section id="tab-ai" class="hidden space-y-4">
+        <!-- แถบเลือกวาระแบบเลื่อนแนวนอน -->
+        <div class="space-y-1.5">
+          <p class="text-[11px] font-bold text-slate-500 px-1">เลือกวาระที่ต้องการอ่านสรุป AI</p>
+          <div id="aiAgendaChips" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+        </div>
+
+        <!-- การ์ดหัวข้อวาระ + ปุ่มฟังเสียงสรุปสังเคราะห์ (TTS ฟรี) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span id="aiSelectedCode" class="px-2.5 py-1 rounded-lg bg-indigo-700 text-white text-xs font-extrabold flex-shrink-0">-</span>
+              <h2 id="aiSelectedTitle" class="text-sm font-extrabold text-slate-900 leading-snug truncate">เลือกวาระ</h2>
+            </div>
+            <span id="aiSelectedStatus" class="flex-shrink-0"></span>
+          </div>
+
+          <!-- เครื่องเล่นอ่านเสียงสรุปภาษาไทย (Web Speech Synthesis) -->
+          <div class="bg-indigo-50/80 border border-indigo-100 rounded-xl p-3 flex items-center justify-between gap-3">
+            <button id="btnTtsPlay" onclick="toggleSpeakSummary()" class="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-sm flex-shrink-0 transition active:scale-95">
+              <i id="ttsPlayIcon" class="fa-solid fa-play text-xs"></i>
+            </button>
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold text-indigo-950">ฟังเสียงสรุปวาระนี้ (AI Voice Readout)</p>
+              <p id="ttsStatusLabel" class="text-[11px] text-indigo-600 truncate">แตะปุ่มเล่นเพื่อให้มือถืออ่านสรุปภาษาไทยให้ฟัง</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- การ์ดเนื้อหาสรุป AI -->
+        <div id="aiSummaryCards" class="space-y-2.5"></div>
+
+        <!-- ปุ่มแชร์สรุป & เปิดเอกสารเต็ม -->
+        <div class="grid grid-cols-2 gap-2.5 pt-1">
+          <button onclick="shareSummaryToLine()" class="py-3 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-share-nodes"></i> แชร์สรุปเข้า LINE
+          </button>
+          <button onclick="switchBottomTab('docs')" class="py-3 px-3 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-file-lines"></i> โหมดเอกสารเต็ม
+          </button>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 3: มติที่ประชุม & รายการงาน (Resolutions & Action Items)          -->
+      <!-- =================================================================== -->
+      <section id="tab-actions" class="hidden space-y-4">
+        <!-- ปุ่มสลับย่อย: มติที่ประชุม / Action Items -->
+        <div class="grid grid-cols-2 gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs">
+          <button id="subtab-res" onclick="switchActionSubTab('res')" class="py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs transition">
+            มติที่ประชุม (<span id="resCountBadge">0</span>)
+          </button>
+          <button id="subtab-act" onclick="switchActionSubTab('act')" class="py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+            Action Items (<span id="actCountBadge">0</span>)
+          </button>
+        </div>
+
+        <div id="resolutionsListWrap" class="space-y-2.5"></div>
+        <div id="actionsListWrap" class="hidden space-y-2.5"></div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 4: เอกสาร & ข้อมูลการประชุม (Documents & Official Minutes)       -->
+      <!-- =================================================================== -->
+      <section id="tab-docs" class="hidden space-y-4">
+        <!-- การ์ดข้อมูลและเอกสารหลัก -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3.5">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg flex-shrink-0">
+              <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <div class="min-w-0">
+              <h2 class="text-sm font-extrabold text-slate-900">เอกสารและรายงานการประชุม</h2>
+              <p id="docsMetaLine" class="text-[11px] text-slate-500 truncate">สรุปอัตโนมัติด้วย Gemini 2.5 Flash</p>
+            </div>
+          </div>
+
+          <div id="docsActionButtons" class="space-y-2"></div>
+        </div>
+
+        <!-- รายการไฟล์เสียงต้นฉบับใน Google Drive -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+          <h3 class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-headphones text-indigo-600"></i> ไฟล์เสียงบันทึกต้นฉบับ (Google Drive)
+          </h3>
+          <div id="docsAudioList" class="space-y-2"></div>
+        </div>
+
+        <!-- รายชื่อผู้เข้าร่วมประชุม -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-users text-indigo-600"></i> ผู้เข้าร่วมประชุม (<span id="docsAttendeeCount">0</span> ท่าน)
+            </h3>
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Google Calendar</span>
+          </div>
+          <div id="docsAttendeeList" class="space-y-2"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (4 แท็บตามแบบ Stitch) -->
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-2 grid grid-cols-4 z-40 shadow-[0_-4px_16px_rgba(15,23,42,0.06)]">
+      <button onclick="switchBottomTab('agenda')" id="bnav-agenda" class="flex flex-col items-center justify-center gap-1 py-1 text-indigo-600 font-bold">
+        <i class="fa-solid fa-list-check text-base"></i>
+        <span class="text-[10px]">ติดตามวาระ</span>
+      </button>
+      <button onclick="switchBottomTab('ai')" id="bnav-ai" class="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 font-semibold">
+        <i class="fa-solid fa-wand-magic-sparkles text-base"></i>
+        <span class="text-[10px]">สรุป AI</span>
+      </button>
+      <button onclick="switchBottomTab('actions')" id="bnav-actions" class="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 font-semibold relative">
+        <i class="fa-solid fa-gavel text-base"></i>
+        <span class="text-[10px]">มติ/Actions</span>
+      </button>
+      <button onclick="switchBottomTab('docs')" id="bnav-docs" class="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 font-semibold">
+        <i class="fa-regular fa-file-lines text-base"></i>
+        <span class="text-[10px]">เอกสาร</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- MODAL: ส่งโน้ตถึงเลขาฯ / ตั้งชื่อผู้บริหาร -->
+  <div id="noteModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between">
+        <h3 id="noteModalTitle" class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+          <i class="fa-regular fa-note-sticky text-indigo-600"></i> ส่งโน้ตถึงเลขาฯ ที่ประชุม
+        </h3>
+        <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-700 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p id="noteModalSub" class="text-xs text-slate-500">ข้อความจะเด้งแจ้งเตือนบนหน้าจอคอมพิวเตอร์ของเลขาฯ ทันทีแบบ Real-time</p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อ / ตำแหน่งของคุณ</label>
+          <input type="text" id="execNameInput" placeholder="เช่น ผอ.สมชาย / ผู้บริหาร" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div id="noteMessageWrap">
+          <label class="block text-xs font-bold text-slate-700 mb-1">ข้อความถึงเลขาฯ <span class="text-rose-500">*</span></label>
+          <textarea id="execNoteInput" rows="3" placeholder="เช่น ขอให้บันทึกมติเรื่องงบประมาณเพิ่มอีก 1 ข้อ หรือ ขอสอบถามเพิ่มเติมในวาระนี้" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button onclick="closeNoteModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">ยกเลิก</button>
+        <button id="btnSubmitSignal" onclick="submitExecutiveSignal()" class="flex-[1.6] py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm">ส่งถึงเลขาฯ ทันที</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 🔴🔴🔴 ตั้งค่าการเชื่อมต่อ Firebase (ใช้ชุดเดียวกับหน้าปฏิทินและ LIFF) 🔴🔴🔴
+    // =========================================================================
+    const LIFF_PAGE_URL = "index.html";             // หน้าหลัก LIFF จองห้องประชุม
+    const FULL_REPORT_URL = "meeting-recorder.html"; // หน้าเอกสารฉบับเต็ม (A4 Print / Desktop View)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZDd23UFQcXfjCOE3_mbCE9YyYTst8dU0",
+      authDomain: "meeting-rec-and-report.firebaseapp.com",
+      projectId: "meeting-rec-and-report"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    try { db.settings({ experimentalForceLongPolling: true }); } catch (e) {}
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentEventId = urlParams.get('eventId');
+    const urlRoom = urlParams.get('room') || '';
+    const urlExecName = urlParams.get('name') || '';
+
+    let meetingData = null;
+    let selectedAgendaId = null;
+    let currentTab = 'agenda';
+    let currentActionSubTab = 'res';
+    let pendingSignalType = 'note'; // 'note' | 'hand'
+    let isSpeaking = false;
+
+    // -------------------------------------------------------------------------
+    // เริ่มต้นระบบ
+    // -------------------------------------------------------------------------
+    window.onload = () => {
+      if (urlExecName) {
+        try { localStorage.setItem('exec_display_name', urlExecName); } catch (e) {}
+      }
+      initWaveBars();
+
+      if (!currentEventId) {
+        document.getElementById('invalidState').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('appContent').classList.remove('hidden');
+      document.getElementById('bottomNav').classList.remove('hidden');
+      subscribeMeeting();
+    };
+
+    function goBackToLiff() {
+      window.location.href = LIFF_PAGE_URL;
+    }
+
+    function showToast(msg, type = 'info') {
+      const bg = { success: 'bg-emerald-600', error: 'bg-rose-600', warning: 'bg-amber-600', info: 'bg-slate-800' }[type] || 'bg-slate-800';
+      const el = document.createElement('div');
+      el.className = `${bg} text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 transition-opacity duration-300`;
+      el.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i><span>${escapeHtml(msg)}</span>`;
+      document.getElementById('toastBox').appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3200);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    function formatTime(sec) {
+      const s = Number(sec || 0);
+      const h = Math.floor(s / 3600);
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      const r = String(s % 60).padStart(2, '0');
+      return h > 0 ? `${String(h).padStart(2, '0')}:${m}:${r}` : `${m}:${r}`;
+    }
+
+    function initWaveBars() {
+      const box = document.getElementById('heroWaveBars');
+      const heights = [35, 60, 45, 85, 55, 95, 70, 40, 80, 100, 65, 50, 90, 60, 45, 75, 85, 50, 65, 40];
+      box.innerHTML = heights.map((h, i) =>
+        `<div class="flex-1 rounded-full bg-indigo-200 transition-all" data-h="${h}" style="height:28%; animation-delay:${(i * 0.07).toFixed(2)}s"></div>`
+      ).join('');
+    }
+
+    function setWaveActive(active) {
+      const bars = document.getElementById('heroWaveBars').children;
+      for (let i = 0; i < bars.length; i++) {
+        if (active) {
+          bars[i].style.height = `${bars[i].dataset.h}%`;
+          bars[i].className = 'flex-1 rounded-full bg-emerald-500 wave-bar';
+        } else {
+          bars[i].style.height = '28%';
+          bars[i].className = 'flex-1 rounded-full bg-indigo-200';
+        }
+      }
+    }
+
+    function normalizeAgendas(raw) {
+      if (!Array.isArray(raw)) return [];
+      return raw.map((ag, idx) => ({
+        id: ag.id || `ag_${idx + 1}`,
+        code: ag.code || `${ag.number || (idx + 1)}.0`,
+        title: ag.title || `วาระที่ ${idx + 1}`,
+        status: ag.status || 'idle',
+        durationSec: ag.durationSec || 0,
+        summary: ag.summary || '',
+        aiData: ag.aiData || null,
+        driveFileUrl: ag.driveFileUrl || '',
+        subAgendas: Array.isArray(ag.subAgendas) ? ag.subAgendas.map((sub, sIdx) => ({
+          id: sub.id || `sub_${idx + 1}_${sIdx + 1}`,
+          code: sub.code || `${idx + 1}.${sIdx + 1}`,
+          title: sub.title || `วาระย่อย ${idx + 1}.${sIdx + 1}`,
+          status: sub.status || 'idle',
+          durationSec: sub.durationSec || 0,
+          summary: sub.summary || '',
+          aiData: sub.aiData || null,
+          driveFileUrl: sub.driveFileUrl || ''
+        })) : []
+      }));
+    }
+
+    function getAllNodes() {
+      const list = [];
+      (meetingData?.agendas || []).forEach(p => {
+        list.push(p);
+        (p.subAgendas || []).forEach(s => list.push(s));
+      });
+      return list;
+    }
+
+    // -------------------------------------------------------------------------
+    // เชื่อมต่อ Firestore Real-time
+    // -------------------------------------------------------------------------
+    function subscribeMeeting() {
+      db.collection('meetings').doc(currentEventId).onSnapshot(
+        (doc) => {
+          if (!doc.exists) {
+            document.getElementById('headerMeetingTitle').innerText = 'รอผู้บันทึกเริ่มการประชุม...';
+            document.getElementById('headerRoomMeta').innerText = urlRoom || 'ห้องประชุม';
+            document.getElementById('heroAgendaTitle').innerText = 'ยังไม่ได้เริ่มบันทึกเสียงการประชุม';
+            document.getElementById('mobileAgendaTree').innerHTML = `
+              <div class="bg-white rounded-2xl border border-slate-200 p-6 text-center text-xs text-slate-500">
+                <i class="fa-solid fa-hourglass-half text-xl text-amber-500 mb-2"></i>
+                <p class="font-bold text-slate-700">รอเลขาฯ เปิดห้องบันทึกเสียงบนเครื่อง Desktop</p>
+                <p class="mt-1">หน้าจอนี้จะอัปเดตวาระและสรุป AI อัตโนมัติทันทีที่เริ่มประชุม</p>
+              </div>`;
+            return;
+          }
+
+          const raw = doc.data();
+          meetingData = { ...raw, agendas: normalizeAgendas(raw.agendas) };
+          const nodes = getAllNodes();
+
+          // หากยังไม่ได้เลือกวาระ ให้โฟกัสวาระที่กำลังอัดอยู่ หรือวาระล่าสุดที่สรุปเสร็จ
+          if (!selectedAgendaId && nodes.length > 0) {
+            const liveNode = nodes.find(n => n.status === 'recording' || n.status === 'processing' || n.status === 'paused');
+            const doneNodes = nodes.filter(n => n.status === 'done');
+            selectedAgendaId = liveNode ? liveNode.id : (doneNodes.length ? doneNodes[doneNodes.length - 1].id : nodes[0].id);
+          }
+
+          renderAll();
+        },
+        (err) => showToast('เชื่อมต่อข้อมูลไม่ได้: ' + (err.code || err.message), 'error')
+      );
+    }
+
+    function renderAll() {
+      if (!meetingData) return;
+      const roomName = (meetingData.room && meetingData.room !== 'ไม่ระบุห้องประชุม') ? meetingData.room : (urlRoom || 'ห้องประชุม');
+      const dateStr = meetingData.startTime ? new Date(meetingData.startTime).toLocaleDateString('th-TH', { dateStyle: 'medium' }) : '-';
+      const nodes = getAllNodes();
+      const liveNode = nodes.find(n => n.status === 'recording' || n.status === 'processing' || n.status === 'paused');
+
+      // Header
+      document.getElementById('headerRoomMeta').innerText = `📍 ${roomName} • ${dateStr}`;
+      document.getElementById('headerMeetingTitle').innerText = meetingData.title || '(ไม่ระบุหัวข้อ)';
+      document.getElementById('headerLiveBadge').innerHTML = liveNode
+        ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700"><span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping"></span> LIVE</span>`
+        : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-check"></i> พร้อมอ่าน</span>`;
+
+      renderAgendaTab(roomName, dateStr, nodes, liveNode);
+      renderAiTab(nodes);
+      renderActionsTab(nodes);
+      renderDocsTab(roomName, dateStr, nodes);
+    }
+
+    // -------------------------------------------------------------------------
+    // TAB 1: ติดตามวาระ
+    // -------------------------------------------------------------------------
+    function renderAgendaTab(roomName, dateStr, nodes, liveNode) {
+      const heroNode = liveNode || nodes.find(n => n.id === selectedAgendaId) || nodes[0];
+      const doneCount = nodes.filter(n => n.status === 'done').length;
+
+      document.getElementById('agendaCountPill').innerText = `${nodes.length} หัวข้อ`;
+      document.getElementById('agendaProgressText').innerText = `สรุปแล้ว ${doneCount}/${nodes.length}`;
+
+      if (heroNode) {
+        const isRec = heroNode.status === 'recording';
+        const isProc = heroNode.status === 'processing';
+        const isPaused = heroNode.status === 'paused';
+
+        document.getElementById('heroAgendaCode').innerText = `วาระที่ ${heroNode.code}`;
+        document.getElementById('heroAgendaTitle').innerText = heroNode.title;
+        document.getElementById('heroMeetingSub').innerText = `📍 ${roomName} • 📅 ${dateStr}`;
+        document.getElementById('heroDurationText').innerText = formatTime(heroNode.durationSec || meetingData.totalDurationSec || 0);
+
+        const badge = document.getElementById('heroStatusBadge');
+        const waveLabel = document.getElementById('heroWaveLabel');
+
+        if (isRec) {
+          badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-600 text-white';
+          badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span> กำลังพิจารณาและบันทึกเสียงสด';
+          waveLabel.innerHTML = '<i class="fa-solid fa-tower-broadcast text-emerald-600"></i> ห้องประชุมกำลังบันทึกเสียงสด...';
+          setWaveActive(true);
+        } else if (isProc) {
+          badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800';
+          badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI กำลังสรุปวาระนี้...';
+          waveLabel.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i> กำลังประมวลผลสรุปด้วย Gemini AI';
+          setWaveActive(false);
+        } else if (isPaused) {
+          badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800';
+          badge.innerHTML = '<i class="fa-solid fa-pause"></i> พักการประชุมชั่วคราว';
+          waveLabel.innerHTML = '<i class="fa-solid fa-mug-hot text-amber-600"></i> หยุดพักชั่วคราว';
+          setWaveActive(false);
+        } else if (heroNode.status === 'done') {
+          badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700';
+          badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> จบวาระและสรุปแล้ว';
+          waveLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600"></i> สรุป AI พร้อมอ่านแล้ว';
+          setWaveActive(false);
+        } else {
+          badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800';
+          badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span> รอเริ่มวาระ';
+          waveLabel.innerHTML = '<i class="fa-solid fa-wave-square text-indigo-500"></i> พร้อมติดตามสถานะการบันทึกเสียง';
+          setWaveActive(false);
+        }
+      }
+
+      // เรนเดอร์รายการวาระแบบต้นไม้
+      const treeEl = document.getElementById('mobileAgendaTree');
+      treeEl.innerHTML = meetingData.agendas.map(parent => {
+        const isLiveP = parent.status === 'recording';
+        const snippetP = parent.aiData?.resolutions?.[0] || parent.aiData?.summaryPoints?.[0]?.content || '';
+        const subsHtml = (parent.subAgendas || []).length ? `
+          <div class="mt-3 pl-3 border-l-2 border-indigo-100 space-y-2.5">
+            ${parent.subAgendas.map(sub => {
+              const isLiveS = sub.status === 'recording';
+              const snippetS = sub.aiData?.resolutions?.[0] || sub.aiData?.summaryPoints?.[0]?.content || '';
+              return `
+                <div onclick="openAgendaAiSummary('${sub.id}')" class="cursor-pointer rounded-xl p-3 border transition active:scale-[0.99] ${isLiveS ? 'bg-indigo-50/70 border-indigo-400 ring-2 ring-indigo-100' : 'bg-slate-50 border-slate-200'}">
+                  <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold ${isLiveS ? 'bg-indigo-700 text-white' : 'bg-indigo-100 text-indigo-800'}">${escapeHtml(sub.code)}</span>
+                    ${getMiniStatusPill(sub.status)}
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-900 leading-snug">${escapeHtml(sub.title)}</h4>
+                  ${snippetS ? `<p class="text-[11px] text-slate-600 mt-1 line-clamp-2">${escapeHtml(snippetS)}</p>` : ''}
+                  ${sub.status === 'done' ? `<div class="mt-2 text-[11px] font-bold text-indigo-600 flex items-center gap-1">แตะอ่านสรุป AI <i class="fa-solid fa-arrow-right text-[9px]"></i></div>` : ''}
+                </div>`;
+            }).join('')}
+          </div>` : '';
+
+        return `
+          <div onclick="openAgendaAiSummary('${parent.id}')" class="cursor-pointer bg-white rounded-2xl border p-4 shadow-xs transition active:scale-[0.99] ${isLiveP ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200'}">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="px-2.5 py-0.5 rounded-lg text-xs font-extrabold ${isLiveP ? 'bg-indigo-700 text-white' : 'bg-indigo-50 text-indigo-800'}">วาระ ${escapeHtml(parent.code)}</span>
+              ${getMiniStatusPill(parent.status)}
+            </div>
+            <h3 class="text-sm font-extrabold text-slate-900 leading-snug">${escapeHtml(parent.title)}</h3>
+            ${snippetP ? `<p class="text-xs text-slate-600 mt-1.5 line-clamp-2">${escapeHtml(snippetP)}</p>` : ''}
+            ${parent.status === 'done' ? `<div class="mt-2 text-[11px] font-bold text-indigo-600 flex items-center gap-1">แตะอ่านสรุป AI <i class="fa-solid fa-arrow-right text-[9px]"></i></div>` : ''}
+            ${subsHtml}
+          </div>`;
+      }).join('');
+    }
+
+    function getMiniStatusPill(status) {
+      if (status === 'recording') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 animate-pulse">🔴 กำลังอัด</span>`;
+      if (status === 'processing') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">⏳ AI กำลังสรุป</span>`;
+      if (status === 'paused') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">⏸️ พักชั่วคราว</span>`;
+      if (status === 'done') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">✅ สรุปแล้ว</span>`;
+      return `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">รอพิจารณา</span>`;
+    }
+
+    function openAgendaAiSummary(agendaId) {
+      selectedAgendaId = agendaId;
+      stopSpeaking();
+      switchBottomTab('ai');
+      renderAiTab(getAllNodes());
+    }
+
+    // -------------------------------------------------------------------------
+    // TAB 2: สรุป AI + อ่านออกเสียงภาษาไทย (TTS)
+    // -------------------------------------------------------------------------
+    function renderAiTab(nodes) {
+      const chipsEl = document.getElementById('aiAgendaChips');
+      chipsEl.innerHTML = nodes.map(n => {
+        const active = n.id === selectedAgendaId;
+        return `
+          <button onclick="selectAiAgenda('${n.id}')" class="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${active ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 border-slate-200'}">
+            วาระ ${escapeHtml(n.code)} ${n.status === 'done' ? '✓' : n.status === 'recording' ? '🔴' : ''}
+          </button>`;
+      }).join('');
+
+      const node = nodes.find(n => n.id === selectedAgendaId) || nodes[0];
+      const cardsEl = document.getElementById('aiSummaryCards');
+      if (!node) return;
+
+      document.getElementById('aiSelectedCode').innerText = `วาระ ${node.code}`;
+      document.getElementById('aiSelectedTitle').innerText = node.title;
+      document.getElementById('aiSelectedStatus').innerHTML = getMiniStatusPill(node.status);
+
+      if (node.status === 'processing') {
+        cardsEl.innerHTML = `
+          <div class="bg-white rounded-2xl border border-amber-200 p-6 text-center space-y-2">
+            <i class="fa-solid fa-wand-magic-sparkles fa-beat text-2xl text-amber-500"></i>
+            <p class="text-sm font-bold text-slate-800">Gemini AI กำลังสรุปวาระนี้...</p>
+            <p class="text-xs text-slate-500">หน้าจอจะอัปเดตอัตโนมัติทันทีที่สรุปเสร็จ</p>
+          </div>`;
+        return;
+      }
+
+      const pts = node.aiData?.summaryPoints || [];
+      const ress = node.aiData?.resolutions || [];
+      let html = '';
+
+      if (pts.length > 0) {
+        const iconColors = ['bg-indigo-50 text-indigo-600', 'bg-blue-50 text-blue-600', 'bg-emerald-50 text-emerald-600', 'bg-violet-50 text-violet-600'];
+        html += pts.map((pt, i) => `
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg ${iconColors[i % iconColors.length]} flex items-center justify-center text-[11px] font-bold flex-shrink-0">${i + 1}</span>
+              <h4 class="text-xs font-extrabold text-slate-900">${escapeHtml(pt.topic || `สาระสำคัญข้อที่ ${i + 1}`)}</h4>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed pl-8">${escapeHtml(pt.content)}</p>
+            ${pt.note ? `<p class="text-[11px] text-slate-500 pl-8 pt-1 border-t border-slate-100 mt-1.5"><i class="fa-regular fa-comment-dots text-indigo-400 mr-1"></i>${escapeHtml(pt.note)}</p>` : ''}
+          </div>`).join('');
+      } else if (node.summary) {
+        html += `<div class="bg-white rounded-2xl border border-slate-200 p-4 text-xs text-slate-700 whitespace-pre-line leading-relaxed">${escapeHtml(node.summary)}</div>`;
+      }
+
+      if (ress.length > 0) {
+        html += `
+          <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-1.5">
+            <p class="text-[11px] font-extrabold text-emerald-800 flex items-center gap-1.5"><i class="fa-solid fa-gavel"></i> มติที่ประชุมในวาระนี้</p>
+            ${ress.map(r => `<p class="text-xs font-bold text-emerald-950 leading-relaxed">• ${escapeHtml(r)}</p>`).join('')}
+          </div>`;
+      }
+
+      if (!html) {
+        html = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+            <i class="fa-solid fa-sparkles text-2xl text-indigo-200 mb-2"></i>
+            <p>ยังไม่มีสรุป AI สำหรับวาระนี้</p>
+            <p class="mt-1">สรุปจะปรากฏอัตโนมัติเมื่อเลขาฯ กดจบวาระ</p>
+          </div>`;
+      }
+      cardsEl.innerHTML = html;
+    }
+
+    function selectAiAgenda(id) {
+      selectedAgendaId = id;
+      stopSpeaking();
+      renderAiTab(getAllNodes());
+    }
+
+    // อ่านเสียงสรุปภาษาไทยด้วย Web Speech Synthesis (ฟรีบนมือถือ)
+    function toggleSpeakSummary() {
+      if (!('speechSynthesis' in window)) {
+        return showToast('เบราว์เซอร์นี้ไม่รองรับการอ่านออกเสียง', 'warning');
+      }
+      if (isSpeaking) {
+        stopSpeaking();
+        return;
+      }
+      const node = getAllNodes().find(n => n.id === selectedAgendaId);
+      if (!node) return;
+
+      const textToRead = buildPlainSummaryText(node);
+      if (!textToRead) {
+        return showToast('ยังไม่มีข้อความสรุปให้อ่านในวาระนี้', 'warning');
+      }
+
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(textToRead);
+      utter.lang = 'th-TH';
+      utter.rate = 1.0;
+      utter.onstart = () => {
+        isSpeaking = true;
+        document.getElementById('ttsPlayIcon').className = 'fa-solid fa-stop text-xs';
+        document.getElementById('ttsStatusLabel').innerText = 'กำลังอ่านสรุปวาระนี้... (แตะเพื่อหยุด)';
+      };
+      utter.onend = () => stopSpeaking();
+      utter.onerror = () => stopSpeaking();
+      window.speechSynthesis.speak(utter);
+    }
+
+    function stopSpeaking() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      isSpeaking = false;
+      const icon = document.getElementById('ttsPlayIcon');
+      const lbl = document.getElementById('ttsStatusLabel');
+      if (icon) icon.className = 'fa-solid fa-play text-xs';
+      if (lbl) lbl.innerText = 'แตะปุ่มเล่นเพื่อให้มือถืออ่านสรุปภาษาไทยให้ฟัง';
+    }
+
+    function buildPlainSummaryText(node) {
+      if (!node) return '';
+      const lines = [];
+      if (node.aiData?.summaryPoints?.length) {
+        lines.push(`สรุปวาระที่ ${node.code} ${node.title}`);
+        node.aiData.summaryPoints.forEach(p => lines.push(`${p.topic ? p.topic + ': ' : ''}${p.content}`));
+      }
+      if (node.aiData?.resolutions?.length) {
+        lines.push('มติที่ประชุม: ' + node.aiData.resolutions.join(', '));
+      }
+      return lines.length ? lines.join('\n') : (node.summary || '');
+    }
+
+    function copyTextFallback(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('คัดลอกสรุปแล้ว พร้อมวางส่งต่อใน LINE', 'success');
+      } catch (e) {
+        showToast('ไม่สามารถคัดลอกข้อความได้', 'error');
+      }
+      document.body.removeChild(ta);
+    }
+
+    function shareSummaryToLine() {
+      const node = getAllNodes().find(n => n.id === selectedAgendaId);
+      const text = buildPlainSummaryText(node);
+      if (!text) return showToast('ยังไม่มีข้อความสรุปสำหรับแชร์', 'warning');
+
+      const shareMsg = `📋 สรุปการประชุม: ${meetingData.title}\n${text}`;
+      if (typeof liff !== 'undefined' && liff.isInClient() && liff.isApiAvailable('shareTargetPicker')) {
+        liff.shareTargetPicker([{ type: 'text', text: shareMsg }])
+          .then(() => showToast('แชร์สรุปเข้าแชท LINE สำเร็จ', 'success'))
+          .catch(() => copyTextFallback(shareMsg));
+      } else {
+        copyTextFallback(shareMsg);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // TAB 3: มติที่ประชุม & Action Items
+    // -------------------------------------------------------------------------
+    function switchActionSubTab(sub) {
+      currentActionSubTab = sub;
+      const btnRes = document.getElementById('subtab-res');
+      const btnAct = document.getElementById('subtab-act');
+      const resWrap = document.getElementById('resolutionsListWrap');
+      const actWrap = document.getElementById('actionsListWrap');
+
+      if (sub === 'res') {
+        btnRes.className = 'py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs transition';
+        btnAct.className = 'py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition';
+        resWrap.classList.remove('hidden');
+        actWrap.classList.add('hidden');
+      } else {
+        btnRes.className = 'py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition';
+        btnAct.className = 'py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs transition';
+        resWrap.classList.add('hidden');
+        actWrap.classList.remove('hidden');
+      }
+    }
+
+    function renderActionsTab(nodes) {
+      const allRes = [];
+      const allAct = [];
+      nodes.forEach(n => {
+        (n.aiData?.resolutions || []).forEach(r => allRes.push({ code: n.code, title: n.title, text: r }));
+        (n.aiData?.actionItems || []).forEach(a => allAct.push({ ...a, code: n.code, title: n.title }));
+      });
+
+      document.getElementById('resCountBadge').innerText = allRes.length;
+      document.getElementById('actCountBadge').innerText = allAct.length;
+
+      const resWrap = document.getElementById('resolutionsListWrap');
+      resWrap.innerHTML = allRes.length
+        ? allRes.map((r, i) => `
+            <div class="bg-white rounded-2xl border border-emerald-200 p-4 shadow-xs space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">มติ #${i + 1}</span>
+                <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">วาระ ${escapeHtml(r.code)}</span>
+              </div>
+              <p class="text-xs font-bold text-slate-900 leading-relaxed">${escapeHtml(r.text)}</p>
+              <p class="text-[11px] text-slate-400 truncate">${escapeHtml(r.title)}</p>
+            </div>`).join('')
+        : `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">ยังไม่มีมติที่ประชุมจากการสรุป AI</div>`;
+
+      const actWrap = document.getElementById('actionsListWrap');
+      actWrap.innerHTML = allAct.length
+        ? allAct.map(a => `
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">วาระ ${escapeHtml(a.code)}</span>
+                <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md"><i class="fa-regular fa-calendar mr-1"></i>${escapeHtml(a.deadline || 'ตามแผนงาน')}</span>
+              </div>
+              <p class="text-xs font-bold text-slate-900 leading-snug">${escapeHtml(a.task)}</p>
+              <p class="text-[11px] text-slate-600"><i class="fa-regular fa-user text-indigo-500 mr-1"></i>ผู้รับผิดชอบ: <strong>${escapeHtml(a.owner || 'ไม่ระบุ')}</strong></p>
+            </div>`).join('')
+        : `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">ยังไม่มีรายการงานมอบหมายจากการประชุมนี้</div>`;
+    }
+
+    // -------------------------------------------------------------------------
+    // TAB 4: เอกสาร & ไฟล์เสียง
+    // -------------------------------------------------------------------------
+    function renderDocsTab(roomName, dateStr, nodes) {
+      document.getElementById('docsMetaLine').innerText = `📍 ${roomName} • 📅 ${dateStr}`;
+
+      const btnWrap = document.getElementById('docsActionButtons');
+      const fullReportLink = `${FULL_REPORT_URL}?eventId=${encodeURIComponent(currentEventId)}&mode=view&room=${encodeURIComponent(roomName)}`;
+
+      let btns = '';
+      if (meetingData.docUrl) {
+        btns += `
+          <a href="${meetingData.docUrl}" target="_blank" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-word"></i> เปิดเอกสารรายงานการประชุม (Google Docs)
+          </a>`;
+      } else {
+        btns += `
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center text-[11px] text-slate-500">
+            เลขาฯ ยังไม่ได้สั่งสร้างไฟล์ Google Docs ฉบับสมบูรณ์
+          </div>`;
+      }
+      if (meetingData.folderUrl) {
+        btns += `
+          <a href="${meetingData.folderUrl}" target="_blank" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+            <i class="fa-brands fa-google-drive text-blue-600"></i> เปิดโฟลเดอร์ไฟล์เสียงและเอกสารใน Drive
+          </a>`;
+      }
+      btns += `
+        <a href="${fullReportLink}" target="_blank" class="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-up-right-from-square"></i> เปิดหน้ารายงานฉบับเต็ม (สำหรับพิมพ์ A4 / PDF)
+        </a>`;
+      btnWrap.innerHTML = btns;
+
+      // ไฟล์เสียงใน Drive
+      const audioNodes = nodes.filter(n => n.driveFileUrl);
+      const audioListEl = document.getElementById('docsAudioList');
+      audioListEl.innerHTML = audioNodes.length
+        ? audioNodes.map(n => `
+            <a href="${n.driveFileUrl}" target="_blank" class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 transition">
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-slate-800 truncate">วาระ ${escapeHtml(n.code)}: ${escapeHtml(n.title)}</p>
+                <p class="text-[10px] text-slate-500">ความยาว ${formatTime(n.durationSec)}</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-bold flex-shrink-0"><i class="fa-solid fa-play mr-1"></i>ฟัง</span>
+            </a>`).join('')
+        : `<p class="text-xs text-slate-400 text-center py-2">ยังไม่มีไฟล์เสียงที่บันทึกเสร็จ</p>`;
+
+      // ผู้เข้าร่วมประชุม
+      const details = meetingData.guestDetails || (meetingData.guests || []).map(e => ({ name: e.split('@')[0], email: e }));
+      document.getElementById('docsAttendeeCount').innerText = details.length;
+      document.getElementById('docsAttendeeList').innerHTML = details.length
+        ? details.map(g => `
+            <div class="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="w-7 h-7 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">${escapeHtml((g.name || 'U').substring(0, 2).toUpperCase())}</div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(g.name)}</p>
+                <p class="text-[10px] text-slate-500 truncate">${escapeHtml(g.email)}</p>
+              </div>
+            </div>`).join('')
+        : `<p class="text-xs text-slate-400 text-center py-2">ไม่มีรายชื่อผู้รับเชิญใน Google Calendar</p>`;
+    }
+
+    // -------------------------------------------------------------------------
+    // สลับแท็บล่าง 4 แท็บ
+    // -------------------------------------------------------------------------
+    function switchBottomTab(tab) {
+      currentTab = tab;
+      stopSpeaking();
+      ['agenda', 'ai', 'actions', 'docs'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`bnav-${t}`);
+        btn.className = t === tab
+          ? 'flex flex-col items-center justify-center gap-1 py-1 text-indigo-600 font-bold'
+          : 'flex flex-col items-center justify-center gap-1 py-1 text-slate-400 font-semibold';
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // -------------------------------------------------------------------------
+    // ระบบส่งสัญญาณถึงเลขาฯ แบบ Real-time (ยกมือขออภิปราย / โน้ตถึงเลขาฯ)
+    // -------------------------------------------------------------------------
+    function getSavedExecName() {
+      try { return localStorage.getItem('exec_display_name') || ''; } catch (e) { return ''; }
+    }
+
+    function triggerRaiseHand() {
+      const savedName = getSavedExecName();
+      if (!savedName) {
+        pendingSignalType = 'hand';
+        document.getElementById('noteModalTitle').innerHTML = '<i class="fa-solid fa-hand text-indigo-600"></i> ยกมือขออภิปราย';
+        document.getElementById('noteModalSub').innerText = 'ระบุชื่อหรือตำแหน่งของคุณเพื่อแจ้งเตือนบนหน้าจอเลขาฯ (จำค่าไว้ใช้ครั้งถัดไป)';
+        document.getElementById('noteMessageWrap').classList.add('hidden');
+        document.getElementById('btnSubmitSignal').innerText = 'ยืนยันยกมือขออภิปราย';
+        document.getElementById('execNameInput').value = '';
+        document.getElementById('noteModal').classList.remove('hidden');
+        return;
+      }
+      sendSignalToFirestore('hand', savedName, 'ขอยกมืออภิปรายในวาระปัจจุบัน');
+    }
+
+    function openNoteModal() {
+      pendingSignalType = 'note';
+      document.getElementById('noteModalTitle').innerHTML = '<i class="fa-regular fa-note-sticky text-indigo-600"></i> ส่งโน้ตถึงเลขาฯ ที่ประชุม';
+      document.getElementById('noteModalSub').innerText = 'ข้อความจะเด้งแจ้งเตือนบนหน้าจอคอมพิวเตอร์ของเลขาฯ ทันทีแบบ Real-time';
+      document.getElementById('noteMessageWrap').classList.remove('hidden');
+      document.getElementById('btnSubmitSignal').innerText = 'ส่งถึงเลขาฯ ทันที';
+      document.getElementById('execNameInput').value = getSavedExecName();
+      document.getElementById('execNoteInput').value = '';
+      document.getElementById('noteModal').classList.remove('hidden');
+    }
+
+    function closeNoteModal() {
+      document.getElementById('noteModal').classList.add('hidden');
+    }
+
+    function submitExecutiveSignal() {
+      const name = document.getElementById('execNameInput').value.trim() || 'ผู้บริหาร';
+      try { localStorage.setItem('exec_display_name', name); } catch (e) {}
+
+      if (pendingSignalType === 'hand') {
+        closeNoteModal();
+        sendSignalToFirestore('hand', name, 'ขอยกมืออภิปรายในวาระปัจจุบัน');
+      } else {
+        const msg = document.getElementById('execNoteInput').value.trim();
+        if (!msg) return showToast('กรุณากรอกข้อความถึงเลขาฯ', 'warning');
+        closeNoteModal();
+        sendSignalToFirestore('note', name, msg);
+      }
+    }
+
+    async function sendSignalToFirestore(type, senderName, message) {
+      if (!currentEventId) return;
+      const nodes = getAllNodes();
+      const activeNode = nodes.find(n => n.status === 'recording' || n.status === 'paused') || nodes.find(n => n.id === selectedAgendaId);
+
+      const signal = {
+        id: 'sig_' + Date.now(),
+        type: type, // 'hand' | 'note'
+        sender: senderName,
+        message: message,
+        agendaCode: activeNode ? activeNode.code : '-',
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        await db.collection('meetings').doc(currentEventId).update({
+          executiveSignals: firebase.firestore.FieldValue.arrayUnion(signal)
+        });
+        showToast(type === 'hand' ? 'ส่งสัญญาณยกมือถึงเลขาฯ แล้ว' : 'ส่งโน้ตถึงเลขาฯ เรียบร้อยแล้ว', 'success');
+      } catch (err) {
+        showToast('ส่งสัญญาณไม่สำเร็จ: ' + (err.code || err.message), 'error');
+      }
+    }
+  </script>
+</body>
+</html>
