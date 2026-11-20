@@ -15,12 +15,10 @@
     .nav-item-active { background: linear-gradient(90deg, #1d4ed8 0%, #3730a3 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25); }
     .ai-tab-active { background-color: #ffffff; color: #1d4ed8; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); font-weight: 700; }
     .viz-bar { transition: height 0.08s ease-out; }
-    /* ปรับแต่ง Scrollbar ให้ดูสะอาดตา */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    /* จัดหน้ากระดาษให้สวยงามเมื่อกด พิมพ์ / บันทึกเป็น PDF */
     @media print {
       body { background-color: #ffffff !important; }
       .no-print { display: none !important; }
@@ -32,7 +30,7 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- Toast แจ้งเตือน (แทน alert) -->
+  <!-- Toast แจ้งเตือน -->
   <div id="toastContainer" class="no-print fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm"></div>
 
   <!-- หน้าจอแจ้งเตือนกรณีเข้าเว็บโดยไม่มี eventId -->
@@ -55,18 +53,16 @@
     <!-- Top Navigation Bar -->
     <header class="no-print bg-white border-b border-slate-200 px-4 lg:px-6 h-16 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div class="flex items-center gap-3 min-w-0">
-        <!-- ปุ่มเปิดเมนูบนมือถือ -->
         <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
           <i class="fa-solid fa-bars text-lg"></i>
         </button>
         <div class="flex items-center gap-2.5 flex-shrink-0">
           <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-sm">
-            <i class="fa-solid fa-waveform-lines fa-microphone-lines text-base"></i>
+            <i class="fa-solid fa-microphone-lines text-base"></i>
           </div>
           <span class="font-extrabold text-slate-900 text-base sm:text-lg tracking-tight hidden sm:inline">AgendaVoice AI</span>
         </div>
         <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
-        <!-- ป้ายชื่อการประชุม -->
         <div class="flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-900 px-3 py-1.5 rounded-lg min-w-0">
           <i class="fa-regular fa-calendar-check text-indigo-600 flex-shrink-0 text-xs"></i>
           <span id="topMeetingTitle" class="text-xs sm:text-sm font-bold truncate max-w-[180px] sm:max-w-xs md:max-w-md">กำลังโหลดข้อมูลการประชุม...</span>
@@ -74,26 +70,21 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-        <!-- สถานะ Live Studio / Read-Only -->
         <span id="topStatusPill" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
           <span class="w-2 h-2 rounded-full bg-slate-400"></span> STANDBY
         </span>
-        <!-- เวลารวม -->
         <div class="hidden sm:flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-slate-700 border border-slate-200">
           <i class="fa-solid fa-microphone text-rose-500"></i>
           <span id="topTotalTimer">00:00:00</span>
         </div>
-        <!-- ปุ่มตั้งค่าและทดสอบไมโครโฟน (Setup) -->
         <button id="topAudioSetupBtn" onclick="openAudioSetupModal()" title="ตั้งค่าและทดสอบสัญญาณไมโครโฟน" class="hidden p-2 sm:px-3 sm:py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 border border-slate-200">
           <i class="fa-solid fa-gear"></i>
           <span class="hidden xl:inline">ตั้งค่าไมค์</span>
         </button>
-        <!-- ปุ่มส่งออก Google Docs -->
         <button id="topExportBtn" onclick="exportToGoogleDocs()" title="สร้างเอกสาร Google Docs" class="hidden p-2 sm:px-3 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 border border-slate-200">
           <i class="fa-solid fa-download"></i>
           <span class="hidden xl:inline">Google Docs</span>
         </button>
-        <!-- ปุ่มจบการประชุม -->
         <button id="topEndMeetingBtn" onclick="openEndMeetingModal()" class="hidden px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
           <i class="fa-solid fa-phone-slash"></i>
           <span class="hidden sm:inline">End Meeting</span>
@@ -138,7 +129,6 @@
           </nav>
         </div>
 
-        <!-- Bottom Storage Card -->
         <div class="p-4 border-t border-slate-100 space-y-3">
           <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
             <div class="flex justify-between items-center text-xs font-semibold text-slate-700 mb-1.5">
@@ -228,10 +218,7 @@
                     </div>
                   </div>
 
-                  <!-- แท่งคลื่นเสียง 28 แท่ง -->
-                  <div id="visualizerBars" class="h-16 flex items-end justify-between gap-1 px-1">
-                    <!-- สร้างแท่งอัตโนมัติด้วย JS -->
-                  </div>
+                  <div id="visualizerBars" class="h-16 flex items-end justify-between gap-1 px-1"></div>
 
                   <div class="flex justify-between items-center text-[11px] pt-1 border-t border-indigo-100/70">
                     <span id="visualizerStatusText" class="text-slate-500 flex items-center gap-1.5">
@@ -241,7 +228,7 @@
                   </div>
                 </div>
 
-                <!-- ปุ่มควบคุม 4 ปุ่มตามแบบ Stitch -->
+                <!-- ปุ่มควบคุม 4 ปุ่ม -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <button id="btnRecordMain" onclick="handleMainRecordClick()" class="bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 px-3 text-center transition shadow-sm flex flex-col items-center justify-center gap-0.5">
                     <span class="text-xs sm:text-sm font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-dot"></i> <span id="btnRecordMainLabel">เริ่มบันทึก</span></span>
@@ -284,7 +271,6 @@
                   </div>
                 </div>
 
-                <!-- รายการวาระทั้งหมด (เรนเดอร์ด้วย JS) -->
                 <div id="agendaTreeContainer" class="space-y-3.5">
                   <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400 text-sm">
                     <i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-500 mb-2"></i>
@@ -293,7 +279,7 @@
                 </div>
               </section>
 
-              <!-- 3. การ์ดสิ้นสุดการประชุมทั้งหมด (แสดงเฉพาะ Recorder Mode) -->
+              <!-- 3. การ์ดสิ้นสุดการประชุมทั้งหมด -->
               <section id="endMeetingCard" class="hidden bg-white rounded-2xl border border-rose-200 shadow-sm p-5 flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-3.5">
                   <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl flex-shrink-0 border border-rose-100">
@@ -310,7 +296,7 @@
               </section>
             </div>
 
-            <!-- คอลัมน์ขวา (5 ส่วน): AI Voice Summary & Executive Insights + ผู้เข้าร่วมประชุม -->
+            <!-- คอลัมน์ขวา (5 ส่วน): AI Voice Summary & Executive Insights + สัญญาณจากผู้บริหาร + ผู้เข้าร่วมประชุม -->
             <div id="rightColumn" class="xl:col-span-5 space-y-5 xl:sticky xl:top-20">
 
               <!-- AI Voice Summary Card -->
@@ -327,7 +313,7 @@
                       </div>
                     </div>
                     <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold flex items-center gap-1 flex-shrink-0">
-                      <i class="fa-solid fa-shield-check"></i> พร้อมใช้
+                      <i class="fa-solid fa-circle-check"></i> พร้อมใช้
                     </span>
                   </div>
 
@@ -356,6 +342,18 @@
 
                 <!-- ปุ่ม Action ด้านล่างแผง AI -->
                 <div class="p-4 bg-white border-t border-slate-100 grid grid-cols-2 gap-2">
+                  <button onclick="copyCurrentAiSummary()" class="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-regular fa-copy"></i> คัดลอกสรุป
+                  </button>
+                  <button onclick="exportToGoogleDocs()" class="py-2 px-3 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-700 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-file-word text-blue-600"></i> ส่งออก Google Docs
+                  </button>
+                  <button onclick="shareMeetingLink()" class="col-span-2 py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-share-nodes"></i> คัดลอกลิงก์ติดตามรายงานสด (สำหรับส่งในแชท / LINE)
+                  </button>
+                </div>
+              </section>
+
               <!-- กล่องรับสัญญาณจากผู้บริหาร (ยกมือขออภิปราย / โน้ตถึงเลขาฯ แบบ Real-time) -->
               <section id="execSignalsCard" class="hidden bg-amber-50/90 rounded-2xl border-2 border-amber-300 shadow-sm p-4 space-y-2.5">
                 <div class="flex items-center justify-between">
@@ -384,7 +382,7 @@
             </div>
           </div>
 
-          <!-- มุมมองรวม Action Items ทั้งหมด (เมื่อคลิกเมนู Action Items ด้านซ้าย) -->
+          <!-- มุมมองรวม Action Items ทั้งหมด -->
           <section id="allTasksView" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
@@ -483,7 +481,7 @@
               </div>
             </div>
 
-            <!-- แถบสลับมุมมองรายงาน & ค้นหา (ซ่อนตอนพิมพ์) -->
+            <!-- แถบสลับมุมมองรายงาน & ค้นหา -->
             <div class="no-print bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex flex-wrap items-center justify-between gap-3">
               <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
                 <button id="btnReportModeSummary" onclick="setReportViewMode('summary')" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5">
@@ -510,7 +508,7 @@
               <div id="reportParticipantsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
             </div>
 
-            <!-- ส่วนที่ 2: โครงสร้างรายงานและมติแยกตามวาระ (Agenda Breakdown) -->
+            <!-- ส่วนที่ 2: โครงสร้างรายงานและมติแยกตามวาระ -->
             <div class="space-y-3.5">
               <div class="flex items-center justify-between px-1">
                 <div>
@@ -522,7 +520,7 @@
               <div id="reportAgendaBreakdown" class="space-y-4"></div>
             </div>
 
-            <!-- ส่วนที่ 3: มติที่ประชุมทั้งหมด (Executive Resolutions Summary) -->
+            <!-- ส่วนที่ 3: มติที่ประชุมทั้งหมด -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4 print-break-inside-avoid">
               <div class="border-b border-slate-100 pb-3">
                 <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
@@ -533,7 +531,7 @@
               <div id="reportResolutionsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
             </div>
 
-            <!-- ส่วนที่ 4: รายการสิ่งที่ต้องดำเนินการต่อ (Action Items Matrix) -->
+            <!-- ส่วนที่ 4: รายการสิ่งที่ต้องดำเนินการต่อ -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4 print-break-inside-avoid">
               <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div>
@@ -558,7 +556,7 @@
               </div>
             </div>
 
-            <!-- ส่วนที่ 5: ช่องลงนามรับรองรายงาน (สำหรับพิมพ์เป็นเอกสารทางการ) -->
+            <!-- ส่วนที่ 5: ช่องลงนามรับรองรายงาน -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5 print-break-inside-avoid">
               <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
@@ -593,7 +591,7 @@
     </div>
   </div>
 
-  <!-- MODAL 1: บันทึกต่อวาระเดิม (สร้างวาระย่อยต่อเนื่องอัตโนมัติ) -->
+  <!-- MODAL 1: บันทึกต่อวาระเดิม -->
   <div id="continueAgendaModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
       <div class="flex items-center gap-3">
@@ -673,7 +671,6 @@
         <button onclick="closeAudioSetupModal()" class="text-slate-400 hover:text-slate-700 text-lg p-1"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <!-- เลือกอุปกรณ์ไมโครโฟน -->
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <label class="text-xs font-bold text-slate-700">อุปกรณ์ไมโครโฟน (Microphone Input)</label>
@@ -686,7 +683,6 @@
         </select>
       </div>
 
-      <!-- กล่องวัดระดับสัญญาณเสียงขาเข้า (Live VU Meter) -->
       <div class="bg-[#f8faff] border border-indigo-100 rounded-xl p-4 space-y-3">
         <div class="flex items-center justify-between text-xs">
           <span class="font-bold text-indigo-950 flex items-center gap-1.5">
@@ -695,7 +691,6 @@
           <span id="testDbReadout" class="font-mono font-bold text-slate-600">-∞ dB</span>
         </div>
 
-        <!-- แถบ VU Meter -->
         <div class="w-full h-4 bg-slate-200 rounded-full overflow-hidden p-0.5">
           <div id="testMeterFill" class="h-full rounded-full transition-all duration-75 bg-emerald-500" style="width: 0%;"></div>
         </div>
@@ -708,7 +703,6 @@
         </div>
       </div>
 
-      <!-- ตัวเลือกปรับแต่งคุณภาพเสียง -->
       <div class="space-y-2">
         <p class="text-xs font-bold text-slate-700">การประมวลผลสัญญาณเสียง (Audio Processing)</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
@@ -739,21 +733,24 @@
     // 🔴🔴🔴 ตั้งค่า API และลิงก์หน้าปฏิทินตรงนี้ 🔴🔴🔴
     // =========================================================================
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx71uwm3eL1WcdWKlwbMLEEyWYxUQD7_QIqLBnB6_jKw6uPSjOvzF1DQneUvC2Zr_POIQ/exec";
-    const CALENDAR_PAGE_URL = "q2-calendar.html"; // ลิงก์กลับหน้าปฏิทินรวม
-    const LIFF_ID = "2012271332-6nSif7S";
+    const CALENDAR_PAGE_URL = "q2-calendar.html";
+    const LIFF_ID = "";
     const firebaseConfig = {
       apiKey: "AIzaSyCZDd23UFQcXfjCOE3_mbCE9YyYTst8dU0",
       authDomain: "meeting-rec-and-report.firebaseapp.com",
       projectId: "meeting-rec-and-report"
     };
 
-    // เชื่อมต่อ Firebase Firestore (รองรับเครือข่ายองค์กร)
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // เชื่อมต่อ Firebase Firestore แบบปลอดภัย
+    let db = null;
     try {
-      db.settings({ experimentalForceLongPolling: true });
+      if (typeof firebase !== 'undefined' && firebaseConfig.projectId && firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        try { db.settings({ experimentalForceLongPolling: true }); } catch (e) {}
+      }
     } catch (e) {
-      console.warn('Firestore settings warning:', e);
+      console.warn('Firebase init warning:', e);
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -764,12 +761,17 @@
     // สถานะหลักของระบบ
     let isRecorderMode = false;
     let meetingData = null;
-    let selectedAgendaId = null;     // วาระที่กำลังคลิกดูในแผง AI ด้านขวา
-    let activeAiTab = 'summary';     // summary | resolutions | tasks | transcript
-    let addModalType = 'main';       // main | sub
-    let activeSection = 'studio';    // studio | agenda | insights | tasks | report
-    let reportViewMode = 'summary';  // summary | transcript
+    let selectedAgendaId = null;
+    let activeAiTab = 'summary';
+    let addModalType = 'main';
+    let activeSection = 'studio';
+    let reportViewMode = 'summary';
     let reportSearchQuery = '';
+    let lastSignalCount = 0;
+
+    // สถานะการอัดเสียง
+    let mediaRecorder = null;
+    let mediaStream = null;
     let audioChunks = [];
     let recordingAgendaId = null;
     let isPaused = false;
@@ -786,7 +788,7 @@
     let speechRecognition = null;
     let liveTranscriptText = '';
 
-    // การตั้งค่าไมโครโฟนและโหมดทดสอบสัญญาณ (Audio Setup)
+    // การตั้งค่าไมโครโฟน (Audio Setup)
     let audioSettings = {
       deviceId: '',
       noiseSuppression: true,
@@ -802,7 +804,8 @@
     // เริ่มต้นระบบเมื่อโหลดหน้าเว็บ
     // -------------------------------------------------------------------------
     window.onload = async () => {
-      document.getElementById('backToCalendarBtn').href = CALENDAR_PAGE_URL;
+      const backBtn = document.getElementById('backToCalendarBtn');
+      if (backBtn) backBtn.href = CALENDAR_PAGE_URL;
       loadSavedAudioSettings();
       initVisualizerBars();
 
@@ -815,7 +818,9 @@
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       try {
-        if (LIFF_ID && LIFF_ID !== "YOUR_LIFF_ID") await liff.init({ liffId: LIFF_ID });
+        if (typeof liff !== 'undefined' && LIFF_ID && LIFF_ID !== "YOUR_LIFF_ID") {
+          await liff.init({ liffId: LIFF_ID });
+        }
       } catch (e) { console.log('LIFF init skipped:', e); }
 
       if (!isMobile && urlMode === 'record') {
@@ -837,7 +842,7 @@
     };
 
     // -------------------------------------------------------------------------
-    // ระบบแจ้งเตือน Toast & Modal Helper
+    // ฟังก์ชันช่วยเหลือพื้นฐาน (Toast, Clipboard, Modal, Format)
     // -------------------------------------------------------------------------
     function showToast(message, type = 'info') {
       const colors = {
@@ -856,15 +861,31 @@
       }, 3800);
     }
 
+    function copyToClipboard(text, successMsg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg || 'คัดลอกเรียบร้อยแล้ว', 'success');
+      } catch (e) {
+        showToast('ไม่สามารถคัดลอกข้อความได้', 'error');
+      }
+      document.body.removeChild(ta);
+    }
+
     function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
     }
 
     function toggleMobileSidebar() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      sb.classList.toggle('-translate-x-full');
-      ov.classList.toggle('hidden');
+      document.getElementById('sidebar').classList.toggle('-translate-x-full');
+      document.getElementById('sidebarOverlay').classList.toggle('hidden');
     }
 
     function escapeHtml(str) {
@@ -872,14 +893,15 @@
     }
 
     function formatTime(sec) {
-      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
-      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
-      const s = String(sec % 60).padStart(2, '0');
+      const n = Math.max(0, Number(sec || 0));
+      const h = String(Math.floor(n / 3600)).padStart(2, '0');
+      const m = String(Math.floor((n % 3600) / 60)).padStart(2, '0');
+      const s = String(n % 60).padStart(2, '0');
       return `${h}:${m}:${s}`;
     }
 
     // -------------------------------------------------------------------------
-    // แปลงโครงสร้างข้อมูลวาระให้รองรับทั้งแบบเก่าและแบบต้นไม้ (Agenda Tree)
+    // โครงสร้างวาระแบบต้นไม้ (Agenda Tree)
     // -------------------------------------------------------------------------
     function normalizeAgendas(rawAgendas) {
       if (!Array.isArray(rawAgendas) || rawAgendas.length === 0) {
@@ -911,7 +933,6 @@
       }));
     }
 
-    // ค้นหาวาระ (ทั้งหลักและย่อย) จาก id
     function findAgendaById(id) {
       if (!meetingData || !meetingData.agendas) return null;
       for (let i = 0; i < meetingData.agendas.length; i++) {
@@ -939,6 +960,12 @@
     // โหลดข้อมูลจาก Firestore และ GAS
     // -------------------------------------------------------------------------
     async function loadMeetingData() {
+      if (!db) {
+        showToast('กรุณาตั้งค่า firebaseConfig ในไฟล์ index.html ก่อนใช้งานจริง', 'warning');
+        document.getElementById('topMeetingTitle').innerText = 'ยังไม่ได้ตั้งค่า Firebase';
+        return;
+      }
+
       try {
         const docRef = db.collection('meetings').doc(currentEventId);
         const docSnap = await docRef.get();
@@ -962,29 +989,26 @@
             const textData = await response.text();
             let res;
             try { res = JSON.parse(textData); } catch (e) { throw new Error('ไม่สามารถอ่านข้อมูลจาก GAS ได้ (โปรดตรวจสอบการ Deploy Web App)'); }
-
             if (res.status !== 'success') throw new Error(res.message || 'ไม่พบข้อมูลการประชุม');
 
             const resolvedRoom = (res.meeting.room && res.meeting.room !== 'ไม่ระบุห้องประชุม')
               ? res.meeting.room
               : (urlRoom || 'ไม่ระบุห้องประชุม');
 
-            const initialData = {
+            await docRef.set({
               ...res.meeting,
               room: resolvedRoom,
               agendas: normalizeAgendas([]),
               totalDurationSec: 0,
               folderUrl: ''
-            };
-            await docRef.set(initialData);
+            });
           }
         } else {
-          // กรณีข้อมูลเดิมใน Firestore เคยบันทึกไว้ว่า "ไม่ระบุห้องประชุม" ให้ซ่อมชื่อห้องให้อัตโนมัติ
           const existing = docSnap.data();
           if (!existing.room || existing.room === 'ไม่ระบุห้องประชุม') {
             if (urlRoom) {
               await docRef.update({ room: urlRoom });
-            } else if (isRecorderMode) {
+            } else if (isRecorderMode && GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes('YOUR_GAS')) {
               try {
                 const response = await fetch(GAS_WEB_APP_URL, {
                   method: 'POST',
@@ -1004,25 +1028,22 @@
           }
         }
 
-        // ติดตามข้อมูลแบบ Real-time
         docRef.onSnapshot(
           (snapshot) => {
             if (snapshot.exists) {
               const raw = snapshot.data();
               meetingData = { ...raw, agendas: normalizeAgendas(raw.agendas) };
-              totalSeconds = meetingData.totalDurationSec || getAllAgendaNodes().reduce((sum, n) => sum + (n.durationSec || 0), 0);
-
+              if (!recordingAgendaId) {
+                totalSeconds = meetingData.totalDurationSec || getAllAgendaNodes().reduce((sum, n) => sum + (n.durationSec || 0), 0);
+              }
               if (!selectedAgendaId && meetingData.agendas.length > 0) {
-                // เลือกวาระที่กำลังอัดอยู่ก่อน หรือไม่ก็วาระแรก
                 const liveNode = getAllAgendaNodes().find(n => n.status === 'recording' || n.status === 'processing');
                 selectedAgendaId = liveNode ? liveNode.id : meetingData.agendas[0].id;
               }
               renderAll();
             }
           },
-          (error) => {
-            showToast('เชื่อมต่อ Firestore ไม่สำเร็จ: ' + (error.code || error.message), 'error');
-          }
+          (error) => showToast('เชื่อมต่อ Firestore ไม่สำเร็จ: ' + (error.code || error.message), 'error')
         );
       } catch (err) {
         showToast(err.message || 'โหลดข้อมูลไม่สำเร็จ', 'error');
@@ -1031,6 +1052,7 @@
     }
 
     async function saveAgendasToFirestore() {
+      if (!db || !currentEventId) return;
       await db.collection('meetings').doc(currentEventId).update({
         agendas: meetingData.agendas,
         totalDurationSec: totalSeconds
@@ -1038,12 +1060,11 @@
     }
 
     // -------------------------------------------------------------------------
-    // การเรนเดอร์ UI ทั้งหมด
+    // การเรนเดอร์ UI หลัก
     // -------------------------------------------------------------------------
     function renderAll() {
       if (!meetingData) return;
 
-      // Topbar & Sidebar Meta
       document.getElementById('topMeetingTitle').innerText = meetingData.title || '(ไม่ระบุหัวข้อ)';
       const displayRoom = (meetingData.room && meetingData.room !== 'ไม่ระบุห้องประชุม')
         ? meetingData.room
@@ -1061,7 +1082,6 @@
       }
       document.getElementById('bannerDateMeta').innerText = `📍 ${displayRoom} • 📅 ${dateStr}${timeRangeStr}`;
 
-      // สถานะ Live
       const allNodes = getAllAgendaNodes();
       const liveNode = allNodes.find(n => n.status === 'recording' || n.status === 'paused');
       const processingNode = allNodes.find(n => n.status === 'processing');
@@ -1090,13 +1110,11 @@
         engineDot.className = 'w-2 h-2 rounded-full bg-slate-300';
       }
 
-      // แสดงชื่อวาระที่กำลังโฟกัสบนแบนเนอร์
       const targetNode = liveNode || (selectedAgendaId ? findAgendaById(selectedAgendaId)?.node : null);
       document.getElementById('activeAgendaBannerTitle').innerText = targetNode
         ? `วาระที่ ${targetNode.code}: ${targetNode.title}`
         : 'เลือกวาระการประชุมด้านล่างเพื่อเริ่มต้น';
 
-      // อัปเดตตัวเลขเวลา
       updateTimerDisplays();
       updateEngineButtons();
       renderAgendaTree();
@@ -1106,12 +1124,251 @@
       renderAllTasksView();
       if (activeSection === 'report') renderReportPreview();
     }
-// ... existing code ... -->
-    // -------------------------------------------------------------------------
-    // เรนเดอร์กล่องรับสัญญาณจากผู้บริหาร (ยกมือ / โน้ตถึงเลขาฯ)
-    // -------------------------------------------------------------------------
-    let lastSignalCount = 0;
 
+    function updateTimerDisplays() {
+      const agStr = formatTime(agendaSeconds);
+      const totStr = formatTime(totalSeconds);
+      document.getElementById('bannerAgendaTimer').innerText = agStr;
+      document.getElementById('bannerTotalTimer').innerText = totStr;
+      document.getElementById('topTotalTimer').innerText = totStr;
+      document.getElementById('visualizerTimer').innerText = `${agStr} / 00:45:00 (แนะนำ)`;
+    }
+
+    function updateEngineButtons() {
+      const btnRec = document.getElementById('btnRecordMain');
+      const lblRec = document.getElementById('btnRecordMainLabel');
+      const subRec = document.getElementById('btnRecordMainSub');
+      const btnPause = document.getElementById('btnPauseMain');
+      const lblPause = document.getElementById('btnPauseLabel');
+      const iconPause = document.getElementById('btnPauseIcon');
+      const btnCont = document.getElementById('btnContinueMain');
+      const btnFin = document.getElementById('btnFinishAgendaMain');
+      const bannerPause = document.getElementById('bannerPauseBtn');
+
+      if (recordingAgendaId) {
+        const recNode = findAgendaById(recordingAgendaId)?.node;
+        btnRec.className = 'bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-3 px-3 text-center transition shadow-sm flex flex-col items-center justify-center gap-0.5';
+        lblRec.innerText = isPaused ? 'พักชั่วคราว' : 'กำลังบันทึก';
+        subRec.innerText = recNode ? `วาระที่ ${recNode.code}` : '';
+        btnPause.disabled = false;
+        btnCont.disabled = false;
+        btnFin.disabled = false;
+        bannerPause.classList.remove('hidden');
+        lblPause.innerText = isPaused ? 'บันทึกต่อ' : 'พักการประชุม';
+        iconPause.className = isPaused ? 'fa-solid fa-play' : 'fa-regular fa-circle-pause';
+      } else {
+        const selNode = selectedAgendaId ? findAgendaById(selectedAgendaId)?.node : null;
+        btnRec.className = 'bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 px-3 text-center transition shadow-sm flex flex-col items-center justify-center gap-0.5';
+        lblRec.innerText = 'เริ่มบันทึกเสียง';
+        subRec.innerText = selNode ? `วาระที่ ${selNode.code}` : 'เลือกวาระด้านล่าง';
+        btnPause.disabled = true;
+        btnCont.disabled = true;
+        btnFin.disabled = true;
+        bannerPause.classList.add('hidden');
+        lblPause.innerText = 'พักการประชุม';
+        iconPause.className = 'fa-regular fa-circle-pause';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // เรนเดอร์ระเบียบวาระแบบต้นไม้ (Agenda Tree)
+    // -------------------------------------------------------------------------
+    function renderAgendaTree() {
+      const container = document.getElementById('agendaTreeContainer');
+      if (!meetingData?.agendas?.length) {
+        container.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400 text-sm">ยังไม่มีระเบียบวาระการประชุม</div>`;
+        return;
+      }
+
+      container.innerHTML = meetingData.agendas.map((parent) => {
+        const isSel = selectedAgendaId === parent.id;
+        const isRec = recordingAgendaId === parent.id;
+
+        const subsHtml = (parent.subAgendas || []).map((sub) => {
+          const isSubSel = selectedAgendaId === sub.id;
+          const isSubRec = recordingAgendaId === sub.id;
+          return `
+            <div onclick="selectAgenda('${sub.id}', event)" class="cursor-pointer rounded-xl p-3.5 border transition ${isSubRec ? 'bg-rose-50/60 border-rose-300 ring-2 ring-rose-100' : isSubSel ? 'bg-indigo-50/50 border-indigo-300' : 'bg-slate-50/80 border-slate-200 hover:bg-white'}">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span class="px-2 py-0.5 rounded-lg text-xs font-extrabold flex-shrink-0 ${isSubRec ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-800'}">${escapeHtml(sub.code)}</span>
+                  <div class="min-w-0">
+                    <h4 class="text-sm font-bold text-slate-900 truncate">${escapeHtml(sub.title)}</h4>
+                    <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                      ${getStatusBadgeHtml(sub.status)}
+                      ${sub.durationSec ? `<span>• ${formatTime(sub.durationSec)}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                  ${sub.driveFileUrl ? `<a href="${sub.driveFileUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-lg text-[11px] font-bold transition"><i class="fa-solid fa-play mr-1"></i>ฟังเสียง</a>` : ''}
+                  ${buildAgendaRecordButton(sub)}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+
+        return `
+          <div onclick="selectAgenda('${parent.id}', event)" class="cursor-pointer bg-white rounded-2xl border p-4 sm:p-5 shadow-xs transition ${isRec ? 'border-rose-400 ring-2 ring-rose-100' : isSel ? 'border-indigo-400 ring-2 ring-indigo-100/70' : 'border-slate-200 hover:border-slate-300'}">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-11 h-11 rounded-xl flex flex-col items-center justify-center flex-shrink-0 ${isRec ? 'bg-rose-600 text-white' : 'bg-indigo-700 text-white'}">
+                  <span class="text-[9px] uppercase opacity-80 leading-none">วาระ</span>
+                  <span class="text-sm font-extrabold leading-tight">${escapeHtml(parent.code)}</span>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-sm sm:text-base font-extrabold text-slate-900 truncate">${escapeHtml(parent.title)}</h3>
+                  <div class="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                    ${getStatusBadgeHtml(parent.status)}
+                    ${parent.durationSec ? `<span>• ${formatTime(parent.durationSec)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                ${parent.driveFileUrl ? `<a href="${parent.driveFileUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-play mr-1"></i>ฟังเสียง</a>` : ''}
+                ${isRecorderMode ? `<button onclick="openAddAgendaModal('sub', '${parent.id}'); event.stopPropagation();" class="px-2.5 py-1.5 bg-slate-50 hover:bg-indigo-50 text-indigo-700 border border-slate-200 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus mr-1"></i>วาระย่อย</button>` : ''}
+                ${buildAgendaRecordButton(parent)}
+              </div>
+            </div>
+
+            ${subsHtml ? `<div class="mt-3.5 pl-4 sm:pl-6 border-l-2 border-indigo-100 space-y-2.5">${subsHtml}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    function getStatusBadgeHtml(status) {
+      if (status === 'recording') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold animate-pulse">● กำลังบันทึก</span>`;
+      if (status === 'paused') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">⏸ พักชั่วคราว</span>`;
+      if (status === 'processing') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold"><i class="fa-solid fa-spinner fa-spin"></i> AI กำลังสรุป</span>`;
+      if (status === 'done') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold"><i class="fa-solid fa-check"></i> จบวาระแล้ว</span>`;
+      return `<span class="text-[11px] text-slate-400 font-medium">รอการประชุม</span>`;
+    }
+
+    function buildAgendaRecordButton(node) {
+      if (!isRecorderMode) return '';
+      if (recordingAgendaId === node.id) {
+        return `<button onclick="finishCurrentAgenda(); event.stopPropagation();" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition"><i class="fa-solid fa-check mr-1"></i>จบวาระนี้</button>`;
+      }
+      if (node.status === 'processing') {
+        return `<button disabled class="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold cursor-not-allowed"><i class="fa-solid fa-spinner fa-spin mr-1"></i>กำลังสรุป</button>`;
+      }
+      return `<button onclick="startRecordingAgenda('${node.id}'); event.stopPropagation();" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition"><i class="fa-solid fa-play mr-1"></i>${node.status === 'done' ? 'บันทึกซ้ำ' : 'เริ่มวาระนี้'}</button>`;
+    }
+
+    function selectAgenda(id, event) {
+      if (event) event.stopPropagation();
+      selectedAgendaId = id;
+      renderAll();
+    }
+
+    // -------------------------------------------------------------------------
+    // แผง AI Voice Summary (4 แท็บ)
+    // -------------------------------------------------------------------------
+    function switchAiTab(tab) {
+      activeAiTab = tab;
+      ['summary', 'resolutions', 'tasks', 'transcript'].forEach(t => {
+        const btn = document.getElementById(`aitab-${t}`);
+        if (btn) btn.className = t === tab
+          ? 'ai-tab-active py-1.5 px-1 rounded-lg transition truncate'
+          : 'py-1.5 px-1 rounded-lg transition hover:text-slate-900 truncate';
+      });
+      renderAiPanel();
+    }
+
+    function renderAiPanel() {
+      const contentEl = document.getElementById('aiTabContent');
+      const labelEl = document.getElementById('aiPanelAgendaLabel');
+      const badgeEl = document.getElementById('aiPanelStatusBadge');
+      const node = selectedAgendaId ? findAgendaById(selectedAgendaId)?.node : null;
+
+      if (!node) {
+        labelEl.innerText = 'ยังไม่ได้เลือกวาระ';
+        badgeEl.innerText = '';
+        contentEl.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">เลือกวาระด้านซ้ายเพื่อดูสรุป AI</div>`;
+        return;
+      }
+
+      labelEl.innerText = `วาระที่ ${node.code}: ${node.title}`;
+      badgeEl.innerHTML = getStatusBadgeHtml(node.status);
+
+      if (node.status === 'processing') {
+        contentEl.innerHTML = `
+          <div class="text-center py-10 space-y-2">
+            <i class="fa-solid fa-wand-magic-sparkles fa-beat text-3xl text-amber-500"></i>
+            <p class="text-sm font-bold text-slate-700">Gemini 4 Hydrogen กำลังวิเคราะห์และสรุปเสียง...</p>
+            <p class="text-xs text-slate-500">ใช้เวลาประมาณ 15–40 วินาที ระบบจะอัปเดตหน้าจอให้อัตโนมัติ</p>
+          </div>`;
+        return;
+      }
+
+      if (activeAiTab === 'summary') {
+        const pts = node.aiData?.summaryPoints || [];
+        if (pts.length > 0) {
+          contentEl.innerHTML = pts.map((pt, i) => `
+            <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-2xs space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-bold">${escapeHtml(pt.topic || `ประเด็นที่ ${i + 1}`)}</span>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHtml(pt.content)}</p>
+              ${pt.note ? `<p class="text-[11px] text-slate-500 pt-1 border-t border-slate-100"><i class="fa-regular fa-comment-dots text-indigo-400 mr-1"></i>${escapeHtml(pt.note)}</p>` : ''}
+            </div>`).join('');
+        } else if (node.summary) {
+          contentEl.innerHTML = `<div class="bg-white rounded-xl border border-slate-200 p-4 text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed">${escapeHtml(node.summary)}</div>`;
+        } else {
+          contentEl.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">ยังไม่มีสรุปสาระสำคัญสำหรับวาระนี้<br>เมื่อกด "จบวาระนี้" ระบบจะแสดงสรุปที่นี่อัตโนมัติ</div>`;
+        }
+      } else if (activeAiTab === 'resolutions') {
+        const ress = node.aiData?.resolutions || [];
+        contentEl.innerHTML = ress.length
+          ? ress.map((r, i) => `
+              <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 flex items-start gap-2.5">
+                <span class="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">${i + 1}</span>
+                <p class="text-xs sm:text-sm font-bold text-emerald-950 leading-relaxed">${escapeHtml(r)}</p>
+              </div>`).join('')
+          : `<div class="text-center py-10 text-slate-400 text-xs">ยังไม่มีมติที่ประชุมในวาระนี้</div>`;
+      } else if (activeAiTab === 'tasks') {
+        const tasks = node.aiData?.actionItems || [];
+        contentEl.innerHTML = tasks.length
+          ? tasks.map(t => `
+              <div class="bg-white rounded-xl border border-slate-200 p-3.5 space-y-1.5">
+                <p class="text-xs sm:text-sm font-bold text-slate-900">${escapeHtml(t.task)}</p>
+                <div class="flex flex-wrap gap-2 text-[11px]">
+                  <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-semibold"><i class="fa-regular fa-user mr-1"></i>${escapeHtml(t.owner || 'ไม่ระบุ')}</span>
+                  <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold"><i class="fa-regular fa-calendar mr-1"></i>${escapeHtml(t.deadline || 'ตามแผนงาน')}</span>
+                </div>
+              </div>`).join('')
+          : `<div class="text-center py-10 text-slate-400 text-xs">ยังไม่มีรายการงานมอบหมายในวาระนี้</div>`;
+      } else if (activeAiTab === 'transcript') {
+        const aiTrans = node.aiData?.transcript || '';
+        const liveHtml = (recordingAgendaId === node.id && liveTranscriptText)
+          ? `<div class="bg-rose-50/70 border border-rose-200 rounded-xl p-3.5 mb-2.5"><p class="text-[11px] font-bold text-rose-700 mb-1">🔴 ถอดเสียงสดจากไมโครโฟน (Web Speech API)</p><p class="text-xs text-slate-700 whitespace-pre-line">${escapeHtml(liveTranscriptText)}</p></div>`
+          : '';
+        contentEl.innerHTML = liveHtml + (aiTrans
+          ? `<div class="bg-white rounded-xl border border-slate-200 p-4 text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed">${escapeHtml(aiTrans)}</div>`
+          : (!liveHtml ? `<div class="text-center py-10 text-slate-400 text-xs">ยังไม่มีบันทึกถอดความในวาระนี้</div>` : ''));
+      }
+    }
+
+    function copyCurrentAiSummary() {
+      const node = selectedAgendaId ? findAgendaById(selectedAgendaId)?.node : null;
+      if (!node || (!node.summary && !node.aiData)) {
+        return showToast('ยังไม่มีสรุป AI สำหรับคัดลอกในวาระนี้', 'warning');
+      }
+      const text = node.summary || JSON.stringify(node.aiData, null, 2);
+      copyToClipboard(`วาระที่ ${node.code}: ${node.title}\n${text}`, 'คัดลอกสรุปวาระเรียบร้อยแล้ว');
+    }
+
+    function shareMeetingLink() {
+      const base = window.location.origin + window.location.pathname;
+      const roomName = meetingData?.room ? `&room=${encodeURIComponent(meetingData.room)}` : '';
+      const shareUrl = `${base}?eventId=${encodeURIComponent(currentEventId)}&mode=view${roomName}`;
+      copyToClipboard(shareUrl, 'คัดลอกลิงก์ติดตามรายงานสดแล้ว พร้อมส่งในแชท / LINE');
+    }
+
+    // -------------------------------------------------------------------------
+    // กล่องรับสัญญาณจากผู้บริหาร (ยกมือขออภิปราย / โน้ตถึงเลขาฯ)
+    // -------------------------------------------------------------------------
     function renderExecutiveSignals() {
       const card = document.getElementById('execSignalsCard');
       const listEl = document.getElementById('execSignalsList');
@@ -1140,7 +1397,7 @@
         const timeStr = sig.createdAt ? new Date(sig.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '';
         const isHand = sig.type === 'hand';
         return `
-          <div class="bg-white rounded-xl border ${isHand ? 'border-rose-200' : 'border-amber-200'} p-3 flex items-start justify-between gap-2 shadow-xs">
+          <div class="bg-white rounded-xl border ${isHand ? 'border-rose-200' : 'border-amber-200'} p-3 flex items-start justify-between gap-2 shadow-2xs">
             <div class="min-w-0 space-y-0.5">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isHand ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'}">
@@ -1159,15 +1416,769 @@
     }
 
     async function dismissSingleSignal(sigId) {
+      if (!db) return;
       const remaining = (meetingData?.executiveSignals || []).filter(s => s.id !== sigId);
       await db.collection('meetings').doc(currentEventId).update({ executiveSignals: remaining });
     }
 
     async function clearExecutiveSignals() {
+      if (!db) return;
       await db.collection('meetings').doc(currentEventId).update({ executiveSignals: [] });
     }
 
     // -------------------------------------------------------------------------
     // เรนเดอร์รายชื่อผู้เข้าร่วมประชุม & หน้ารวม Action Items
     // -------------------------------------------------------------------------
-// ... existing code ... -->
+    function renderParticipants() {
+      const details = meetingData?.guestDetails || (meetingData?.guests || []).map(e => ({ name: e.split('@')[0], email: e }));
+      document.getElementById('participantCount').innerText = details.length;
+      const grid = document.getElementById('participantsGrid');
+      if (!details.length) {
+        grid.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-3">ไม่มีรายชื่อผู้รับเชิญใน Google Calendar</p>`;
+        return;
+      }
+      grid.innerHTML = details.map(g => `
+        <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="w-8 h-8 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">${escapeHtml((g.name || 'U').substring(0, 2).toUpperCase())}</div>
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(g.name)}</p>
+            <p class="text-[10px] text-slate-500 truncate">${escapeHtml(g.email)}</p>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderAllTasksView() {
+      const allTasks = [];
+      getAllAgendaNodes().forEach(n => {
+        (n.aiData?.actionItems || []).forEach(a => allTasks.push({ ...a, code: n.code, agendaTitle: n.title }));
+      });
+      document.getElementById('navTaskCount').innerText = allTasks.length;
+      const listEl = document.getElementById('allTasksList');
+      if (!allTasks.length) {
+        listEl.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">ยังไม่มีรายการงานมอบหมายจากการประชุมนี้</div>`;
+        return;
+      }
+      listEl.innerHTML = allTasks.map((t, i) => `
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-xs font-bold">วาระ ${escapeHtml(t.code)}</span>
+              <span class="text-xs text-slate-500">${escapeHtml(t.agendaTitle)}</span>
+            </div>
+            <p class="text-sm font-bold text-slate-900">${i + 1}. ${escapeHtml(t.task)}</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700"><i class="fa-regular fa-user text-indigo-500 mr-1"></i>${escapeHtml(t.owner || 'ไม่ระบุ')}</span>
+            <span class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 font-semibold text-amber-800"><i class="fa-regular fa-calendar mr-1"></i>${escapeHtml(t.deadline || 'ตามแผนงาน')}</span>
+          </div>
+        </div>`).join('');
+    }
+
+    // -------------------------------------------------------------------------
+    // ระบบอัดเสียง, Visualizer และส่งไฟล์เข้า GAS + Gemini
+    // -------------------------------------------------------------------------
+    function initVisualizerBars() {
+      const container = document.getElementById('visualizerBars');
+      if (!container) return;
+      container.innerHTML = Array.from({ length: 28 }, () =>
+        `<div class="viz-bar flex-1 bg-indigo-200 rounded-full" style="height: 14%;"></div>`
+      ).join('');
+    }
+
+    function startVisualizer(stream) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaStreamSource(stream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        source.connect(analyser);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const bars = document.getElementById('visualizerBars').children;
+
+        const draw = () => {
+          if (!analyser) return;
+          vizAnimId = requestAnimationFrame(draw);
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < bars.length; i++) {
+            const val = isPaused ? 0 : (dataArray[i % dataArray.length] || 0);
+            sum += val;
+            const pct = Math.max(12, Math.min(100, Math.round((val / 255) * 100)));
+            bars[i].style.height = `${pct}%`;
+            bars[i].className = isPaused ? 'viz-bar flex-1 bg-amber-300 rounded-full' : 'viz-bar flex-1 bg-indigo-600 rounded-full';
+          }
+          const avg = sum / bars.length;
+          const dbVal = avg > 1 ? (20 * Math.log10(avg / 255)).toFixed(1) : '-∞';
+          document.getElementById('audioGainDb').innerText = `${dbVal} dB`;
+        };
+        draw();
+      } catch (e) { console.warn('Visualizer warning:', e); }
+    }
+
+    function stopVisualizer() {
+      if (vizAnimId) { cancelAnimationFrame(vizAnimId); vizAnimId = null; }
+      if (audioCtx) { try { audioCtx.close(); } catch (e) {} audioCtx = null; analyser = null; }
+      const bars = document.getElementById('visualizerBars')?.children || [];
+      for (let i = 0; i < bars.length; i++) {
+        bars[i].style.height = '14%';
+        bars[i].className = 'viz-bar flex-1 bg-indigo-200 rounded-full';
+      }
+      document.getElementById('audioGainDb').innerText = '-∞ dB';
+      document.getElementById('visualizerStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-300"></span> พร้อมรับสัญญาณเสียงจากไมโครโฟน';
+    }
+
+    function startLiveSpeechRecognition() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) return;
+      try {
+        liveTranscriptText = '';
+        speechRecognition = new SpeechRec();
+        speechRecognition.lang = 'th-TH';
+        speechRecognition.continuous = true;
+        speechRecognition.interimResults = true;
+        speechRecognition.onresult = (event) => {
+          let txt = '';
+          for (let i = 0; i < event.results.length; i++) {
+            txt += event.results[i][0].transcript + (event.results[i].isFinal ? '\n' : '');
+          }
+          liveTranscriptText = txt;
+          if (activeAiTab === 'transcript') renderAiPanel();
+        };
+        speechRecognition.start();
+      } catch (e) {}
+    }
+
+    function stopLiveSpeechRecognition() {
+      if (speechRecognition) {
+        try { speechRecognition.stop(); } catch (e) {}
+        speechRecognition = null;
+      }
+    }
+
+    function handleMainRecordClick() {
+      if (recordingAgendaId) {
+        togglePauseRecording();
+        return;
+      }
+      const targetId = selectedAgendaId || meetingData?.agendas?.[0]?.id;
+      if (!targetId) return showToast('กรุณาเพิ่มวาระการประชุมก่อนเริ่มบันทึกเสียง', 'warning');
+      startRecordingAgenda(targetId);
+    }
+
+    async function startRecordingAgenda(agendaId) {
+      if (recordingAgendaId) return showToast('กำลังบันทึกเสียงวาระอื่นอยู่ กรุณากดจบวาระเดิมก่อน', 'warning');
+      const found = findAgendaById(agendaId);
+      if (!found) return;
+
+      try {
+        const audioConstraints = {
+          noiseSuppression: audioSettings.noiseSuppression,
+          echoCancellation: audioSettings.echoCancellation,
+          autoGainControl: audioSettings.autoGainControl
+        };
+        if (audioSettings.deviceId) audioConstraints.deviceId = { exact: audioSettings.deviceId };
+
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+        mediaRecorder = new MediaRecorder(mediaStream, { mimeType, audioBitsPerSecond: 32000 });
+        audioChunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.start(1000);
+
+        recordingAgendaId = agendaId;
+        selectedAgendaId = agendaId;
+        isPaused = false;
+        agendaSeconds = found.node.durationSec || 0;
+        found.node.status = 'recording';
+        await saveAgendasToFirestore();
+
+        startVisualizer(mediaStream);
+        startLiveSpeechRecognition();
+        document.getElementById('visualizerStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> กำลังบันทึกเสียงเข้าสู่ระบบ...';
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          if (!isPaused) {
+            agendaSeconds++;
+            totalSeconds++;
+            updateTimerDisplays();
+          }
+        }, 1000);
+
+        renderAll();
+        showToast(`เริ่มบันทึกเสียง วาระที่ ${found.node.code}`, 'success');
+      } catch (err) {
+        showToast('ไม่สามารถเปิดไมโครโฟนได้: ' + err.message, 'error');
+      }
+    }
+
+    async function togglePauseRecording() {
+      if (!mediaRecorder || !recordingAgendaId) return;
+      const found = findAgendaById(recordingAgendaId);
+      if (!found) return;
+
+      if (!isPaused) {
+        if (mediaRecorder.state === 'recording') mediaRecorder.pause();
+        isPaused = true;
+        found.node.status = 'paused';
+        document.getElementById('visualizerStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span> พักการบันทึกเสียงชั่วคราว';
+        showToast('พักการบันทึกเสียงชั่วคราวแล้ว', 'info');
+      } else {
+        if (mediaRecorder.state === 'paused') mediaRecorder.resume();
+        isPaused = false;
+        found.node.status = 'recording';
+        document.getElementById('visualizerStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> กำลังบันทึกเสียงเข้าสู่ระบบ...';
+        showToast('กลับมาบันทึกเสียงต่อแล้ว', 'success');
+      }
+      await saveAgendasToFirestore();
+      renderAll();
+    }
+
+    function finishCurrentAgenda() {
+      if (!recordingAgendaId) return;
+      stopAndProcessRecording(recordingAgendaId);
+    }
+
+    function openContinueModal() {
+      if (!recordingAgendaId) return;
+      const found = findAgendaById(recordingAgendaId);
+      if (!found) return;
+      document.getElementById('continueTitleInput').value = `${found.node.title} (ต่อ)`;
+      document.getElementById('continueAgendaModal').classList.remove('hidden');
+    }
+
+    async function confirmContinueAgenda() {
+      const nextTitle = document.getElementById('continueTitleInput').value.trim();
+      if (!nextTitle) return showToast('กรุณาระบุชื่อวาระต่อเนื่อง', 'warning');
+      const currentId = recordingAgendaId;
+      const found = findAgendaById(currentId);
+      closeModal('continueAgendaModal');
+
+      if (found) {
+        const parent = meetingData.agendas[found.parentIndex];
+        const nextSubNum = (parent.subAgendas?.length || 0) + 1;
+        const parentNum = String(parent.code || `${found.parentIndex + 1}.0`).split('.')[0];
+        const newSub = {
+          id: 'sub_' + Date.now(),
+          code: `${parentNum}.${nextSubNum}`,
+          title: nextTitle,
+          status: 'idle',
+          durationSec: 0,
+          summary: '',
+          aiData: null,
+          driveFileUrl: ''
+        };
+        if (!Array.isArray(parent.subAgendas)) parent.subAgendas = [];
+        parent.subAgendas.push(newSub);
+        await saveAgendasToFirestore();
+      }
+      stopAndProcessRecording(currentId);
+    }
+
+    function stopAndProcessRecording(agendaId) {
+      if (!mediaRecorder) return;
+      const found = findAgendaById(agendaId);
+      if (!found) return;
+
+      const recordedSec = agendaSeconds;
+      const targetNode = found.node;
+
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      stopLiveSpeechRecognition();
+      stopVisualizer();
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        mediaRecorder = null;
+        recordingAgendaId = null;
+        isPaused = false;
+
+        targetNode.durationSec = recordedSec;
+        targetNode.status = 'processing';
+        await saveAgendasToFirestore();
+        renderAll();
+        showToast(`กำลังอัปโหลดไฟล์เสียงวาระ ${targetNode.code} ให้ AI สรุป...`, 'info');
+
+        try {
+          const base64Data = await blobToBase64(blob);
+          const response = await fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'processAgendaAudio',
+              eventId: currentEventId,
+              meetingTitle: meetingData.title,
+              roomName: meetingData.room,
+              agendaCode: targetNode.code,
+              agendaTitle: targetNode.title,
+              audioBase64: base64Data,
+              mimeType: blob.type || 'audio/webm'
+            }),
+            redirect: 'follow'
+          });
+          const res = JSON.parse(await response.text());
+          if (res.status !== 'success') throw new Error(res.message || 'AI สรุปไม่สำเร็จ');
+
+          targetNode.status = 'done';
+          targetNode.summary = res.summary || '';
+          targetNode.aiData = res.aiData || null;
+          targetNode.driveFileUrl = res.driveFileUrl || '';
+          if (res.folderUrl) meetingData.folderUrl = res.folderUrl;
+
+          await db.collection('meetings').doc(currentEventId).update({
+            agendas: meetingData.agendas,
+            totalDurationSec: totalSeconds,
+            folderUrl: meetingData.folderUrl || ''
+          });
+          showToast(`AI สรุปวาระ ${targetNode.code} เรียบร้อยแล้ว!`, 'success');
+        } catch (err) {
+          targetNode.status = 'idle';
+          await saveAgendasToFirestore();
+          showToast('สรุปวาระไม่สำเร็จ: ' + err.message, 'error');
+        }
+        renderAll();
+      };
+
+      try { mediaRecorder.stop(); } catch (e) {}
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // เพิ่มวาระหลัก / วาระย่อย
+    // -------------------------------------------------------------------------
+    function openAddAgendaModal(type, presetParentId) {
+      addModalType = type;
+      document.getElementById('addAgendaModalTitle').innerText = type === 'main' ? 'เพิ่มวาระหลักใหม่' : 'เพิ่มวาระย่อยใหม่';
+      const wrap = document.getElementById('parentSelectWrapper');
+      const sel = document.getElementById('parentAgendaSelect');
+
+      if (type === 'sub') {
+        wrap.classList.remove('hidden');
+        sel.innerHTML = (meetingData?.agendas || []).map(p =>
+          `<option value="${p.id}" ${p.id === presetParentId ? 'selected' : ''}>วาระ ${escapeHtml(p.code)}: ${escapeHtml(p.title)}</option>`
+        ).join('');
+      } else {
+        wrap.classList.add('hidden');
+      }
+      document.getElementById('newAgendaTitleInput').value = '';
+      document.getElementById('addAgendaModal').classList.remove('hidden');
+    }
+
+    async function confirmAddAgenda() {
+      const title = document.getElementById('newAgendaTitleInput').value.trim();
+      if (!title) return showToast('กรุณากรอกชื่อหัวข้อวาระ', 'warning');
+
+      if (addModalType === 'main') {
+        const nextNum = (meetingData.agendas?.length || 0) + 1;
+        meetingData.agendas.push({
+          id: 'ag_' + Date.now(),
+          code: `${nextNum}.0`,
+          title,
+          status: 'idle',
+          durationSec: 0,
+          summary: '',
+          aiData: null,
+          driveFileUrl: '',
+          subAgendas: []
+        });
+      } else {
+        const parentId = document.getElementById('parentAgendaSelect').value;
+        const found = findAgendaById(parentId);
+        if (found) {
+          const parent = meetingData.agendas[found.parentIndex];
+          const pNum = String(parent.code || `${found.parentIndex + 1}.0`).split('.')[0];
+          const sNum = (parent.subAgendas?.length || 0) + 1;
+          if (!Array.isArray(parent.subAgendas)) parent.subAgendas = [];
+          parent.subAgendas.push({
+            id: 'sub_' + Date.now(),
+            code: `${pNum}.${sNum}`,
+            title,
+            status: 'idle',
+            durationSec: 0,
+            summary: '',
+            aiData: null,
+            driveFileUrl: ''
+          });
+        }
+      }
+      closeModal('addAgendaModal');
+      await saveAgendasToFirestore();
+      showToast('เพิ่มวาระการประชุมเรียบร้อยแล้ว', 'success');
+    }
+
+    // -------------------------------------------------------------------------
+    // จบการประชุม & ส่งออก Google Docs
+    // -------------------------------------------------------------------------
+    function openEndMeetingModal() {
+      if (recordingAgendaId) return showToast('กรุณากด "จบวาระนี้" เพื่อหยุดอัดเสียงก่อนสิ้นสุดการประชุม', 'warning');
+      document.getElementById('endMeetingModal').classList.remove('hidden');
+    }
+
+    function openReportFromEndModal() {
+      closeModal('endMeetingModal');
+      switchSection('report');
+    }
+
+    async function confirmEndMeeting() {
+      closeModal('endMeetingModal');
+      await exportToGoogleDocs();
+    }
+
+    async function exportToGoogleDocs() {
+      if (!meetingData) return;
+      showToast('กำลังสร้างไฟล์รายงานการประชุม Google Docs...', 'info');
+      try {
+        const dateStr = meetingData.startTime ? new Date(meetingData.startTime).toLocaleDateString('th-TH', { dateStyle: 'long' }) : '-';
+        const response = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'exportGoogleDoc',
+            eventId: currentEventId,
+            meetingTitle: meetingData.title,
+            roomName: meetingData.room,
+            dateStr,
+            guests: meetingData.guests || [],
+            agendas: meetingData.agendas || []
+          }),
+          redirect: 'follow'
+        });
+        const res = JSON.parse(await response.text());
+        if (res.status !== 'success') throw new Error(res.message || 'สร้าง Google Docs ไม่สำเร็จ');
+
+        if (db) {
+          await db.collection('meetings').doc(currentEventId).update({
+            docUrl: res.docUrl,
+            folderUrl: res.folderUrl || meetingData.folderUrl || ''
+          });
+        }
+        showToast('สร้างไฟล์ Google Docs เรียบร้อยแล้ว!', 'success');
+        window.open(res.docUrl, '_blank');
+      } catch (err) {
+        showToast('สร้างเอกสารไม่สำเร็จ: ' + err.message, 'error');
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // สลับเมนูซ้าย (Live Studio / Agenda / Insights / Tasks / Report)
+    // -------------------------------------------------------------------------
+    function switchSection(sec) {
+      activeSection = sec;
+      ['studio', 'agenda', 'insights', 'tasks', 'report'].forEach(s => {
+        const btn = document.getElementById(`nav-${s}`);
+        if (btn) btn.className = s === sec
+          ? 'nav-item-active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition'
+          : 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition';
+      });
+
+      const twoCol = document.getElementById('twoColumnLayout');
+      const banner = document.getElementById('studioTopBanner');
+      const allTasks = document.getElementById('allTasksView');
+      const reportView = document.getElementById('reportPreviewView');
+
+      twoCol.classList.add('hidden');
+      allTasks.classList.add('hidden');
+      reportView.classList.add('hidden');
+      banner.classList.remove('hidden');
+
+      if (sec === 'tasks') {
+        allTasks.classList.remove('hidden');
+      } else if (sec === 'report') {
+        banner.classList.add('hidden');
+        reportView.classList.remove('hidden');
+        renderReportPreview();
+      } else {
+        twoCol.classList.remove('hidden');
+        if (sec === 'agenda') document.getElementById('agendaTreeSection')?.scrollIntoView({ behavior: 'smooth' });
+        if (sec === 'insights') document.getElementById('rightColumn')?.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      if (window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebarOverlay').classList.add('hidden');
+      }
+    }
+
+    function openArchiveLink() {
+      window.location.href = CALENDAR_PAGE_URL;
+    }
+
+    // -------------------------------------------------------------------------
+    // หน้ารายงานสรุปเอกสารฉบับสมบูรณ์ (Executive Report Preview & Print PDF)
+    // -------------------------------------------------------------------------
+    function setReportViewMode(mode) {
+      reportViewMode = mode;
+      document.getElementById('btnReportModeSummary').className = mode === 'summary'
+        ? 'px-3.5 py-2 rounded-lg text-xs font-bold bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5'
+        : 'px-3.5 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5';
+      document.getElementById('btnReportModeTranscript').className = mode === 'transcript'
+        ? 'px-3.5 py-2 rounded-lg text-xs font-bold bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5'
+        : 'px-3.5 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5';
+      renderReportPreview();
+    }
+
+    function onReportSearch(val) {
+      reportSearchQuery = (val || '').trim().toLowerCase();
+      renderReportPreview();
+    }
+
+    function printOfficialReport() {
+      window.print();
+    }
+
+    function renderReportPreview() {
+      if (!meetingData) return;
+      const nodes = getAllAgendaNodes();
+      const doneNodes = nodes.filter(n => n.status === 'done');
+      const allRes = [];
+      const allAct = [];
+      nodes.forEach(n => {
+        (n.aiData?.resolutions || []).forEach(r => allRes.push({ code: n.code, title: n.title, text: r }));
+        (n.aiData?.actionItems || []).forEach(a => allAct.push({ ...a, code: n.code, title: n.title }));
+      });
+
+      const roomName = meetingData.room || urlRoom || 'ไม่ระบุห้องประชุม';
+      const dateStr = meetingData.startTime ? new Date(meetingData.startTime).toLocaleDateString('th-TH', { dateStyle: 'long' }) : '-';
+      const details = meetingData.guestDetails || (meetingData.guests || []).map(e => ({ name: e.split('@')[0], email: e }));
+
+      document.getElementById('reportRefBadge').innerText = `REF: ${(currentEventId || '').substring(0, 10).toUpperCase()}`;
+      document.getElementById('reportMainTitle').innerText = meetingData.title || 'รายงานสรุปผลการประชุม';
+      document.getElementById('reportGeneratedAt').innerText = new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' });
+      document.getElementById('reportDocLinkStatus').innerHTML = meetingData.docUrl
+        ? `<a href="${meetingData.docUrl}" target="_blank" class="underline text-emerald-700">มีไฟล์ Google Docs แล้ว</a>`
+        : 'ฉบับร่างตรวจสอบ';
+      document.getElementById('reportRoomBadge').innerText = roomName;
+
+      document.getElementById('kpiDuration').innerText = formatTime(totalSeconds);
+      document.getElementById('kpiDateText').innerText = `${dateStr} • ${roomName}`;
+      document.getElementById('kpiAttendees').innerText = details.length;
+      document.getElementById('kpiAgendas').innerText = `${doneNodes.length} / ${nodes.length}`;
+      document.getElementById('kpiResolutions').innerText = allRes.length;
+      document.getElementById('kpiActions').innerText = allAct.length;
+
+      document.getElementById('reportAttendeeBadge').innerText = `${details.length} ท่าน`;
+      document.getElementById('reportParticipantsGrid').innerHTML = details.length
+        ? details.map(g => `
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="w-8 h-8 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">${escapeHtml((g.name || 'U').substring(0, 2).toUpperCase())}</div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(g.name)}</p>
+                <p class="text-[10px] text-slate-500 truncate">${escapeHtml(g.email)}</p>
+              </div>
+            </div>`).join('')
+        : `<p class="text-xs text-slate-400 col-span-3">ไม่มีรายชื่อผู้รับเชิญในปฏิทิน</p>`;
+
+      document.getElementById('reportAgendaCountLabel').innerText = `${meetingData.agendas.length} วาระหลัก • ${nodes.length} หัวข้อรวม`;
+
+      const renderNodeBlock = (n, isSub) => {
+        const searchBlob = `${n.code} ${n.title} ${n.summary || ''} ${JSON.stringify(n.aiData || '')}`.toLowerCase();
+        if (reportSearchQuery && !searchBlob.includes(reportSearchQuery)) return '';
+
+        let bodyHtml = '';
+        if (reportViewMode === 'transcript') {
+          bodyHtml = `<p class="text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed">${escapeHtml(n.aiData?.transcript || n.summary || 'ยังไม่มีบันทึกถอดความในวาระนี้')}</p>`;
+        } else {
+          const pts = n.aiData?.summaryPoints || [];
+          const ress = n.aiData?.resolutions || [];
+          if (pts.length) {
+            bodyHtml += `<ul class="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-slate-700">${pts.map(p => `<li><strong>${escapeHtml(p.topic || '')}</strong> ${p.topic ? '— ' : ''}${escapeHtml(p.content)}</li>`).join('')}</ul>`;
+          } else if (n.summary) {
+            bodyHtml += `<p class="text-xs sm:text-sm text-slate-700 whitespace-pre-line">${escapeHtml(n.summary)}</p>`;
+          } else {
+            bodyHtml += `<p class="text-xs text-slate-400 italic">ยังไม่มีข้อสรุปในวาระนี้</p>`;
+          }
+          if (ress.length) {
+            bodyHtml += `<div class="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm text-emerald-950 font-bold"><span class="text-emerald-700 mr-1">มติที่ประชุม:</span> ${ress.map(r => escapeHtml(r)).join(' | ')}</div>`;
+          }
+        }
+
+        return `
+          <div class="${isSub ? 'ml-4 sm:ml-8 bg-slate-50/80 border-slate-200' : 'bg-white border-slate-200'} rounded-2xl border p-4 sm:p-5 space-y-2.5 print-break-inside-avoid">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-lg text-xs font-extrabold ${isSub ? 'bg-indigo-100 text-indigo-800' : 'bg-indigo-700 text-white'}">วาระที่ ${escapeHtml(n.code)}</span>
+                <h3 class="text-sm sm:text-base font-extrabold text-slate-900">${escapeHtml(n.title)}</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                ${n.durationSec ? `<span class="text-[11px] font-mono text-slate-500">${formatTime(n.durationSec)}</span>` : ''}
+                ${n.driveFileUrl ? `<a href="${n.driveFileUrl}" target="_blank" class="no-print px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-[11px] font-bold hover:bg-indigo-100"><i class="fa-solid fa-headphones mr-1"></i>ฟังเสียงต้นฉบับ</a>` : ''}
+              </div>
+            </div>
+            ${bodyHtml}
+          </div>`;
+      };
+
+      const breakdownHtml = meetingData.agendas.map(p =>
+        renderNodeBlock(p, false) + (p.subAgendas || []).map(s => renderNodeBlock(s, true)).join('')
+      ).join('');
+      document.getElementById('reportAgendaBreakdown').innerHTML = breakdownHtml || `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">ไม่พบวาระที่ตรงกับคำค้นหา</div>`;
+
+      document.getElementById('reportResolutionsGrid').innerHTML = allRes.length
+        ? allRes.map((r, i) => `
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono font-bold text-emerald-700">RES-${String(i + 1).padStart(2, '0')}</span>
+                <span class="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">วาระ ${escapeHtml(r.code)}</span>
+              </div>
+              <p class="text-xs sm:text-sm font-bold text-slate-900">${escapeHtml(r.text)}</p>
+              <p class="text-[11px] text-slate-500 truncate">${escapeHtml(r.title)}</p>
+            </div>`).join('')
+        : `<p class="text-xs text-slate-400 col-span-3 text-center py-4">ยังไม่มีมติที่ประชุมที่สรุปแล้ว</p>`;
+
+      document.getElementById('reportActionMatrixBody').innerHTML = allAct.length
+        ? allAct.map(a => `
+            <tr>
+              <td class="py-3 px-3 font-semibold text-slate-900">${escapeHtml(a.task)}</td>
+              <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold">${escapeHtml(a.code)}</span></td>
+              <td class="py-3 px-3 text-slate-700">${escapeHtml(a.owner || 'ไม่ระบุ')}</td>
+              <td class="py-3 px-3 text-amber-800 font-semibold">${escapeHtml(a.deadline || 'ตามแผนงาน')}</td>
+            </tr>`).join('')
+        : `<tr><td colspan="4" class="py-6 text-center text-slate-400 text-xs">ยังไม่มีรายการงานมอบหมาย</td></tr>`;
+    }
+
+    // -------------------------------------------------------------------------
+    // ระบบตั้งค่าและทดสอบไมโครโฟน (Audio Setup Modal)
+    // -------------------------------------------------------------------------
+    function loadSavedAudioSettings() {
+      try {
+        const saved = localStorage.getItem('agendavoice_audio_settings');
+        if (saved) audioSettings = { ...audioSettings, ...JSON.parse(saved) };
+      } catch (e) {}
+    }
+
+    function openAudioSetupModal() {
+      document.getElementById('optNoiseSuppression').checked = audioSettings.noiseSuppression;
+      document.getElementById('optEchoCancellation').checked = audioSettings.echoCancellation;
+      document.getElementById('optAutoGain').checked = audioSettings.autoGainControl;
+      document.getElementById('audioSetupModal').classList.remove('hidden');
+      loadAudioInputDevices(false);
+    }
+
+    function closeAudioSetupModal() {
+      stopMicTest();
+      closeModal('audioSetupModal');
+    }
+
+    async function loadAudioInputDevices(requestPermission) {
+      const sel = document.getElementById('micDeviceSelect');
+      try {
+        if (requestPermission) {
+          const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+          tmp.getTracks().forEach(t => t.stop());
+        }
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const inputs = devices.filter(d => d.kind === 'audioinput');
+        if (!inputs.length) {
+          sel.innerHTML = `<option value="">ไม่พบอุปกรณ์ไมโครโฟน</option>`;
+          return;
+        }
+        sel.innerHTML = inputs.map((d, idx) =>
+          `<option value="${escapeHtml(d.deviceId)}" ${d.deviceId === audioSettings.deviceId ? 'selected' : ''}>${escapeHtml(d.label || `ไมโครโฟน #${idx + 1}`)}</option>`
+        ).join('');
+      } catch (err) {
+        sel.innerHTML = `<option value="">กรุณาอนุญาตการใช้ไมโครโฟนในเบราว์เซอร์</option>`;
+      }
+    }
+
+    function onMicSelectionChanged() {
+      if (testMicStream) {
+        stopMicTest();
+        toggleMicTest();
+      }
+    }
+
+    async function toggleMicTest() {
+      if (testMicStream) {
+        stopMicTest();
+        return;
+      }
+      const btn = document.getElementById('btnToggleMicTest');
+      const hint = document.getElementById('testSignalHint');
+      try {
+        const devId = document.getElementById('micDeviceSelect').value;
+        const constraints = {
+          audio: {
+            deviceId: devId ? { exact: devId } : undefined,
+            noiseSuppression: document.getElementById('optNoiseSuppression').checked,
+            echoCancellation: document.getElementById('optEchoCancellation').checked,
+            autoGainControl: document.getElementById('optAutoGain').checked
+          }
+        };
+        testMicStream = await navigator.mediaDevices.getUserMedia(constraints);
+        loadAudioInputDevices(false);
+
+        testAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = testAudioCtx.createMediaStreamSource(testMicStream);
+        testAnalyser = testAudioCtx.createAnalyser();
+        testAnalyser.fftSize = 256;
+        src.connect(testAnalyser);
+
+        const data = new Uint8Array(testAnalyser.frequencyBinCount);
+        btn.className = 'px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 flex-shrink-0';
+        btn.innerHTML = '<i class="fa-solid fa-stop"></i> หยุดทดสอบ';
+
+        const loop = () => {
+          if (!testAnalyser) return;
+          testAnimId = requestAnimationFrame(loop);
+          testAnalyser.getByteTimeDomainData(data);
+          let sumSq = 0;
+          for (let i = 0; i < data.length; i++) {
+            const v = (data[i] - 128) / 128;
+            sumSq += v * v;
+          }
+          const rms = Math.sqrt(sumSq / data.length);
+          const pct = Math.min(100, Math.round(rms * 260));
+          const db = rms > 0.0001 ? (20 * Math.log10(rms)).toFixed(1) : '-∞';
+
+          const fill = document.getElementById('testMeterFill');
+          fill.style.width = `${pct}%`;
+          fill.className = `h-full rounded-full transition-all duration-75 ${pct > 85 ? 'bg-rose-500' : pct > 15 ? 'bg-emerald-500' : 'bg-amber-400'}`;
+          document.getElementById('testDbReadout').innerText = `${db} dB`;
+          hint.innerText = pct > 85 ? '⚠️ เสียงดังเกินไป อาจแตกพร่า' : pct > 15 ? '✅ สัญญาณเสียงเข้าชัดเจนดีมาก' : '🔈 เสียงค่อนข้างเบา ลองพูดใกล้ไมค์ขึ้น';
+        };
+        loop();
+      } catch (err) {
+        showToast('ทดสอบไมค์ไม่ได้: ' + err.message, 'error');
+      }
+    }
+
+    function stopMicTest() {
+      if (testAnimId) { cancelAnimationFrame(testAnimId); testAnimId = null; }
+      if (testAudioCtx) { try { testAudioCtx.close(); } catch (e) {} testAudioCtx = null; testAnalyser = null; }
+      if (testMicStream) { testMicStream.getTracks().forEach(t => t.stop()); testMicStream = null; }
+      const btn = document.getElementById('btnToggleMicTest');
+      if (btn) {
+        btn.className = 'px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 flex-shrink-0';
+        btn.innerHTML = '<i class="fa-solid fa-microphone"></i> เริ่มทดสอบไมค์';
+      }
+      const fill = document.getElementById('testMeterFill');
+      if (fill) fill.style.width = '0%';
+      const readout = document.getElementById('testDbReadout');
+      if (readout) readout.innerText = '-∞ dB';
+      const hint = document.getElementById('testSignalHint');
+      if (hint) hint.innerText = 'กดปุ่ม "เริ่มทดสอบไมค์" แล้วลองพูดเพื่อตรวจสอบสัญญาณ';
+    }
+
+    function saveAudioSetup() {
+      audioSettings = {
+        deviceId: document.getElementById('micDeviceSelect').value || '',
+        noiseSuppression: document.getElementById('optNoiseSuppression').checked,
+        echoCancellation: document.getElementById('optEchoCancellation').checked,
+        autoGainControl: document.getElementById('optAutoGain').checked
+      };
+      try { localStorage.setItem('agendavoice_audio_settings', JSON.stringify(audioSettings)); } catch (e) {}
+      closeAudioSetupModal();
+      showToast('บันทึกการตั้งค่าไมโครโฟนเรียบร้อยแล้ว', 'success');
+    }
+  </script>
+</body>
+</html>
