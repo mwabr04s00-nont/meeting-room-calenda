@@ -93,6 +93,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      transition: opacity 0.3s ease;
     }
 
     /* Header */
@@ -130,7 +131,7 @@
       margin-top: 3px;
     }
 
-    /* แถบทางลัด Live Now (แสดงจำนวนห้องและรายชื่อห้องที่กำลังประชุมสด/บันทึกเสียง AI วันนี้) */
+    /* แถบทางลัด Live Now */
     .live-banner-wrap {
       display: none;
       margin-bottom: 16px;
@@ -179,9 +180,7 @@
       padding: 4px 11px;
       border-radius: 999px;
     }
-    .live-pill.done-pill {
-      background: #059669;
-    }
+    .live-pill.done-pill { background: #059669; }
     .live-dot {
       width: 7px;
       height: 7px;
@@ -226,13 +225,8 @@
       gap: 10px;
       margin-top: 8px;
     }
-    .live-item-row.done-row {
-      border-color: #D1FAE5;
-    }
-    .live-item-info {
-      min-width: 0;
-      flex: 1;
-    }
+    .live-item-row.done-row { border-color: #D1FAE5; }
+    .live-item-info { min-width: 0; flex: 1; }
     .live-item-title {
       font-size: 13.5px;
       font-weight: 700;
@@ -281,7 +275,7 @@
       box-shadow: 0 3px 10px rgba(5, 150, 105, 0.22);
     }
 
-    /* กล่องแสดงโปรไฟล์ LINE & ข้อความแนะนำ */
+    /* โปรไฟล์ LINE */
     .profile-card {
       display: none;
       background: #FFFFFF;
@@ -388,12 +382,9 @@
       background-color: #FFFFFF;
       box-shadow: 0 0 0 4px var(--line-green-glow);
     }
-    textarea {
-      resize: vertical;
-      height: 80px;
-    }
+    textarea { resize: vertical; height: 80px; }
 
-    /* กล่องแสดงผล วันที่ภาษาไทย */
+    /* วันที่ภาษาไทย */
     .date-display-box {
       background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
       border: 1px solid #BBF7D0;
@@ -441,7 +432,7 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* Table Styling */
+    /* Table */
     .table-wrapper {
       border-radius: 14px;
       overflow: hidden;
@@ -483,10 +474,7 @@
       cursor: default;
       transition: 0.15s;
     }
-    .badge.available {
-      background: #DCFCE7;
-      color: #15803D;
-    }
+    .badge.available { background: #DCFCE7; color: #15803D; }
     .badge.booked {
       background: #FEE2E2;
       color: #B91C1C;
@@ -529,15 +517,8 @@
       cursor: pointer;
       margin-top: 6px;
     }
-    .offsite-item-title {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--slate-800);
-    }
-    .offsite-item-sub {
-      font-size: 11px;
-      color: var(--slate-500);
-    }
+    .offsite-item-title { font-size: 12.5px; font-weight: 700; color: var(--slate-800); }
+    .offsite-item-sub { font-size: 11px; color: var(--slate-500); }
 
     /* Calendar Grid */
     .cal-header {
@@ -558,9 +539,7 @@
       cursor: pointer;
       font-weight: 700;
       color: var(--slate-700);
-      transition: all 0.15s;
     }
-    .cal-header button:hover { background: #EDF2F7; }
     .cal-month-title { font-weight: 700; font-size: 15px; color: var(--slate-900); }
     .cal-legend {
       display: flex;
@@ -590,9 +569,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      transition: all 0.15s;
     }
-    .cal-day-cell:hover { background: #EDF2F7; }
     .cal-day-cell.selected {
       border: 2px solid var(--line-green);
       background: #F0FDF4;
@@ -604,7 +581,7 @@
     .cal-dots-container { display: flex; gap: 2px; margin-top: 4px; justify-content: center; flex-wrap: wrap; }
     .cal-room-pill { font-size: 8.5px; padding: 1px 3px; border-radius: 4px; color: #fff; font-weight: 700; line-height: 1.1; }
 
-    /* Room Preview Box */
+    /* Room Preview */
     .room-preview {
       text-align: center;
       margin-bottom: 16px;
@@ -618,7 +595,6 @@
       max-height: 180px;
       object-fit: cover;
       border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     }
     .room-desc {
       font-size: 12.5px;
@@ -640,15 +616,10 @@
       font-weight: 700;
       cursor: pointer;
       box-shadow: 0 8px 20px -4px rgba(6, 199, 85, 0.38);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-    }
-    .btn-submit:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 24px -4px rgba(6, 199, 85, 0.48);
     }
     .btn-submit:disabled {
       background: #CBD5E1;
@@ -679,11 +650,6 @@
       max-width: 390px;
       overflow: hidden;
       box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.18);
-      animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes modalPop {
-      from { transform: scale(0.92); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
     }
     .modal-header {
       background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
@@ -694,33 +660,12 @@
       align-items: center;
     }
     .modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
-    .modal-close {
-      font-size: 24px;
-      font-weight: bold;
-      cursor: pointer;
-      color: var(--slate-400);
-      line-height: 1;
-    }
-    .modal-close:hover { color: #FFFFFF; }
+    .modal-close { font-size: 24px; font-weight: bold; cursor: pointer; color: var(--slate-400); line-height: 1; }
     .modal-body { padding: 20px; }
-    .detail-item {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 11px;
-      font-size: 13.5px;
-    }
+    .detail-item { display: flex; align-items: flex-start; margin-bottom: 11px; font-size: 13.5px; }
     .detail-item:last-child { margin-bottom: 0; }
-    .detail-label {
-      width: 88px;
-      color: var(--slate-500);
-      font-weight: 500;
-      flex-shrink: 0;
-    }
-    .detail-val {
-      color: var(--slate-900);
-      font-weight: 700;
-      word-break: break-word;
-    }
+    .detail-label { width: 88px; color: var(--slate-500); font-weight: 500; flex-shrink: 0; }
+    .detail-val { color: var(--slate-900); font-weight: 700; word-break: break-word; }
 
     /* กล่องสถานะ AI Report ภายใน Modal */
     .ai-status-box {
@@ -728,19 +673,11 @@
       padding-top: 14px;
       border-top: 1px dashed var(--slate-200);
     }
-    .ai-card {
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-size: 12.5px;
-    }
+    .ai-card { border-radius: 14px; padding: 12px 14px; font-size: 12.5px; }
     .ai-card.live { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
     .ai-card.done { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
     .ai-card.wait { background: #F8FAFC; border: 1px solid #E2E8F0; color: #64748B; text-align: center; }
-    .ai-btn-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
+    .ai-btn-row { display: flex; gap: 8px; margin-top: 10px; }
     .ai-btn {
       flex: 1;
       border: none;
@@ -813,17 +750,10 @@
       </div>
     </div>
 
-    <!-- แถบทางลัด: กำลังประชุมสดตอนนี้ (แสดงอัตโนมัติเมื่อมีห้องกำลังอัดเสียงสด) -->
-    <div id="liveNowContainer" class="live-banner-wrap">
-      <div class="live-banner-card">
-        <div class="live-banner-header">
-          <span class="live-pill"><span class="live-dot"></span> LIVE NOW • กำลังประชุมสด</span>
-          <span style="font-size: 11px; color: #991B1B; font-weight: 600;">แตะเพื่อดูสรุปวาระสด</span>
-        </div>
-        <div id="liveNowList"></div>
-    <!-- แถบทางลัด: สถานะกำลังประชุมสด / การประชุมสำคัญที่มีบันทึกเสียงวันนี้ -->
+    <!-- แถบทางลัด: สถานะกำลังประชุมสด / การประชุมสำคัญที่มีบันทึกเสียงวันนี้ (ปิดแท็กสมบูรณ์) -->
     <div id="liveNowContainer" class="live-banner-wrap"></div>
 
+    <!-- การ์ดที่ 1: ตรวจสอบตารางห้องว่าง -->
     <div class="card">
       <label for="bookingDate">เลือกวันที่ต้องการตรวจสอบ</label>
       <input type="date" id="bookingDate" onchange="onDateInputChange()">
@@ -877,7 +807,7 @@
           💡 แตะปุ่มสีแดง <strong>"ไม่ว่าง"</strong> เพื่อดูรายละเอียดการจองหรือเปิดอ่านรายงานสรุป AI
         </p>
 
-        <!-- รายการประชุมนอกสถานที่ของวันที่เลือก (แสดงเมื่อมีข้อมูล) -->
+        <!-- รายการประชุมนอกสถานที่ของวันที่เลือก -->
         <div id="offsiteListBox" class="offsite-box">
           <div class="offsite-box-title"><i class="fa-solid fa-building-user"></i> รายการประชุมนอกสถานที่ (วันที่เลือก)</div>
           <div id="offsiteListItems"></div>
@@ -941,7 +871,7 @@
       </div>
     </div>
 
-    <!-- ฟอร์มการจอง -->
+    <!-- การ์ดที่ 2: ฟอร์มการจองห้องประชุม -->
     <div class="card">
       <label for="roomSelect">เลือกห้องที่ต้องการจอง</label>
       <select id="roomSelect" onchange="onRoomChange()">
@@ -1024,22 +954,23 @@
     // =========================================================================
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-jnXyhi4jXs8MhfG4jkC1Ye6cLrL0dfJdPBMSPPDK7W2-y1POiuuHsKcn_FlqLGE6/exec";
     const LIFF_ID = "2012271332-6nSif7Sl";
-    // ลิงก์หน้าติดตามรายงานสด (อยู่บน GitHub Pages เดียวกันใช้ชื่อไฟล์ได้เลย)
-    const RECORDER_APP_URL = "meeting-recorder.html";
+    const EXECUTIVE_VIEW_URL = "executive-view.html";
     const firebaseConfig = {
       apiKey: "AIzaSyCZDd23UFQcXfjCOE3_mbCE9YyYTst8dU0",
       authDomain: "meeting-rec-and-report.firebaseapp.com",
       projectId: "meeting-rec-and-report"
     };
 
-    // เชื่อมต่อ Firebase Firestore (รองรับเครือข่ายองค์กร)
+    // เชื่อมต่อ Firebase Firestore (เปิด LongPolling ให้ทะลุ Firewall องค์กรได้)
     let db = null;
     if (firebaseConfig.projectId && firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
       try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
         db.settings({ experimentalForceLongPolling: true });
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Firebase init warning:", e);
+      }
     }
 
     const roomData = {
@@ -1053,26 +984,26 @@
     let currentScheduleData = null;
     let currentOffsiteData = [];
     let currentUserId = "";
-    let slotDetailStore = {};          // เก็บข้อมูลรายละเอียดแต่ละช่องเพื่อเปิด Modal อย่างปลอดภัย
-    let unsubscribeModalStatus = null; // ยกเลิก listener ตอนปิด Modal
+    let currentDisplayName = "";
+    let slotDetailStore = {};
+    let modalStatusUnsubscribe = null;
 
-    // แจ้งเตือนแบบ Toast (ไม่ใช้ alert)
-    function showToast(message, type = 'info') {
-      const bgMap = {
-        success: '#059669',
-        error: '#DC2626',
-        warning: '#D97706',
-        info: '#1E293B'
-      };
+    // -------------------------------------------------------------------------
+    // ฟังก์ชันช่วยเหลือพื้นฐาน
+    // -------------------------------------------------------------------------
+    function showToast(msg, type = 'info') {
+      const box = document.getElementById('toastBox');
+      if (!box) return;
+      const bgMap = { success: '#059669', error: '#DC2626', warning: '#D97706', info: '#1E293B' };
+      const iconMap = { success: 'fa-circle-check', error: 'fa-circle-exclamation', warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
       const el = document.createElement('div');
       el.className = 'toast-item';
       el.style.background = bgMap[type] || bgMap.info;
-      el.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i><span>${escapeHtml(message)}</span>`;
-      document.getElementById('toastBox').appendChild(el);
+      el.innerHTML = `<i class="fa-solid ${iconMap[type] || iconMap.info}"></i><span>${escapeHtml(msg)}</span>`;
+      box.appendChild(el);
       setTimeout(() => {
         el.style.opacity = '0';
-        el.style.transition = 'opacity 0.25s';
-        setTimeout(() => el.remove(), 260);
+        setTimeout(() => el.remove(), 300);
       }, 3600);
     }
 
@@ -1080,16 +1011,9 @@
       return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 
-    // เรียก API เชื่อมต่อกับ GAS (ใส่ text/plain กัน CORS)
-    async function callGasApi(action, payload = {}) {
-      const response = await fetch(GAS_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action, ...payload }),
-        redirect: "follow"
-      });
-      const text = await response.text();
-      return JSON.parse(text);
+    function getLocalDateKey(dateObj) {
+      const d = dateObj || new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     function formatThaiDate(dateStr) {
@@ -1102,15 +1026,31 @@
       return `${d} ${mNames[m]} ${y} (${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}/${y})`;
     }
 
-    function getTodayDateStr() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    // เรียก API ไปยัง GAS (รองรับ CORS ผ่าน text/plain)
+    async function callGasApi(action, payload = {}) {
+      const response = await fetch(GAS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload }),
+        redirect: "follow"
+      });
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        throw new Error("เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ตรวจสอบสิทธิ์ Deploy Web App)");
+      }
     }
 
+    // -------------------------------------------------------------------------
+    // เริ่มต้นระบบเมื่อโหลดหน้าเว็บ
+    // -------------------------------------------------------------------------
     function initDate() {
-      const todayStr = getTodayDateStr();
-      document.getElementById('bookingDate').value = todayStr;
-      document.getElementById('thaiDateLabel').innerText = formatThaiDate(todayStr);
+      const todayStr = getLocalDateKey(new Date());
+      const dateInput = document.getElementById('bookingDate');
+      const thaiLabel = document.getElementById('thaiDateLabel');
+      if (dateInput) dateInput.value = todayStr;
+      if (thaiLabel) thaiLabel.innerText = formatThaiDate(todayStr);
     }
 
     window.onload = function() {
@@ -1119,16 +1059,15 @@
       loadSchedule();
       fetchMonthOverview();
       initLiff();
-      subscribeLiveMeetingsBanner();
+      startLiveMeetingsWatcher();
     };
 
     // -------------------------------------------------------------------------
-    // 1. ติดตามการประชุมที่กำลังอัดเสียงสด / บันทึกเสียงสำคัญวันนี้ (แถบด้านบนสุด)
+    // 1. แถบทางลัดแสดงสถานะการประชุมสด / ประชุมสำคัญวันนี้ (Real-time)
     // -------------------------------------------------------------------------
-    function flattenAgendas(agendas) {
+    function getAllAgendasFlat(agendas) {
       const list = [];
-      if (!Array.isArray(agendas)) return list;
-      agendas.forEach(ag => {
+      (Array.isArray(agendas) ? agendas : []).forEach(ag => {
         list.push(ag);
         if (Array.isArray(ag.subAgendas)) {
           ag.subAgendas.forEach(sub => list.push(sub));
@@ -1137,133 +1076,121 @@
       return list;
     }
 
-    function hasActiveAgenda(agendas) {
-      return flattenAgendas(agendas).some(
-        n => n.status === 'recording' || n.status === 'processing' || n.status === 'paused'
-      );
-    }
+    function startLiveMeetingsWatcher() {
+      const container = document.getElementById('liveNowContainer');
+      if (!db || !container) return;
 
-    function getMeetingLiveMeta(agendas) {
-      const nodes = flattenAgendas(agendas);
-      const activeNode = nodes.find(n => n.status === 'recording' || n.status === 'processing' || n.status === 'paused');
-      const doneCount = nodes.filter(n => n.status === 'done').length;
-      return { activeNode, doneCount, totalCount: nodes.length };
-    }
-
-    function toLocalDateStr(isoStr) {
-      if (!isoStr) return '';
-      const d = new Date(isoStr);
-      if (isNaN(d.getTime())) return '';
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    }
-
-    function subscribeLiveMeetingsBanner() {
-      if (!db) return;
       db.collection('meetings').onSnapshot(
         (snapshot) => {
-          const todayStr = getTodayDateStr();
-          const liveNowList = [];
-          const todayRecordedList = [];
+          const todayKey = getLocalDateKey(new Date());
+          const liveItems = [];
+          const todayDoneItems = [];
 
           snapshot.forEach(doc => {
-            const data = doc.data();
-            const meta = getMeetingLiveMeta(data.agendas);
-            const isLive = Boolean(meta.activeNode);
-            const isTodayMeeting = toLocalDateStr(data.startTime) === todayStr;
+            const data = doc.data() || {};
+            const allNodes = getAllAgendasFlat(data.agendas);
+            const activeNode = allNodes.find(n => n.status === 'recording' || n.status === 'processing' || n.status === 'paused');
+            const doneCount = allNodes.filter(n => n.status === 'done').length;
 
-            if (isLive) {
-              liveNowList.push({ id: doc.id, ...data, _meta: meta, _isLive: true });
+            // เช็กว่าเป็นประชุมของวันนี้หรือไม่
+            let isTodayMeeting = false;
+            if (data.startTime) {
+              const dt = new Date(data.startTime);
+              if (!isNaN(dt.getTime()) && getLocalDateKey(dt) === todayKey) {
+                isTodayMeeting = true;
+              }
+            }
+
+            const itemObj = {
+              id: doc.id,
+              title: data.title || '(ไม่ระบุหัวข้อ)',
+              room: data.room || 'ห้องประชุม',
+              activeNode: activeNode,
+              doneCount: doneCount,
+              totalCount: allNodes.length
+            };
+
+            if (activeNode) {
+              liveItems.push(itemObj);
             } else if (isTodayMeeting) {
-              // การประชุมสำคัญวันนี้ที่เปิดห้องบันทึกเสียงแล้ว (เช่น พักระหว่างวาระ หรือสรุปเสร็จแล้ว)
-              todayRecordedList.push({ id: doc.id, ...data, _meta: meta, _isLive: false });
+              todayDoneItems.push(itemObj);
             }
           });
 
-          const container = document.getElementById('liveNowContainer');
-          const combined = [...liveNowList, ...todayRecordedList];
-
-          // กรณีวันนี้ยังไม่มีห้องใดเปิดบันทึกเสียง AI
-          if (combined.length === 0) {
-            container.style.display = 'block';
-            container.innerHTML = `
-              <div class="live-idle-bar">
-                <span><i class="fa-solid fa-tower-broadcast" style="color:#94A3B8; margin-right:6px;"></i>สถานะประชุมสดวันนี้</span>
-                <span style="font-weight:700; color:#64748B;">ยังไม่มีห้องที่เปิดบันทึกเสียง AI</span>
-              </div>`;
-            return;
-          }
-
-          const hasAnyLive = liveNowList.length > 0;
-          const uniqueRooms = [...new Set(combined.map(m => m.room || 'ไม่ระบุห้องประชุม'))];
-
-          const headerPillHtml = hasAnyLive
-            ? `<span class="live-pill"><span class="live-dot"></span> กำลังประชุมสด ${liveNowList.length} ห้อง</span>`
-            : `<span class="live-pill done-pill"><i class="fa-solid fa-wand-magic-sparkles"></i> ประชุมสำคัญที่มีบันทึก AI วันนี้ ${todayRecordedList.length} ห้อง</span>`;
-
-          const subRightText = hasAnyLive && todayRecordedList.length > 0
-            ? `ทั้งหมดวันนี้ ${combined.length} ห้อง`
-            : 'แตะเพื่อติดตามสรุปวาระ';
-
-          const chipsHtml = uniqueRooms.map(roomName => {
-            const roomIsLive = liveNowList.some(m => (m.room || 'ไม่ระบุห้องประชุม') === roomName);
-            return `<span class="live-room-chip ${roomIsLive ? '' : 'done-chip'}">
-              <i class="fa-solid ${roomIsLive ? 'fa-microphone-lines' : 'fa-check-circle'}"></i> ${escapeHtml(roomName)}
-            </span>`;
-          }).join('');
-
-          const rowsHtml = combined.map(m => {
-            const safeRoom = escapeHtml(m.room || 'ห้องประชุม');
-            const safeTitle = escapeHtml(m.title || '(ไม่ระบุหัวข้อ)');
-            const roomArg = encodeURIComponent(m.room || '');
-            const activeNode = m._meta.activeNode;
-
-            let statusTagHtml = '';
-            if (activeNode) {
-              const stLabel = activeNode.status === 'processing'
-                ? '⏳ AI กำลังสรุป'
-                : activeNode.status === 'paused'
-                  ? '⏸️ พักชั่วคราว'
-                  : '🔴 กำลังอัด';
-              const agCode = activeNode.code || activeNode.number || '';
-              statusTagHtml = `<div class="live-agenda-tag">${stLabel} • วาระ ${escapeHtml(agCode)}: ${escapeHtml(activeNode.title)}</div>`;
-            } else {
-              statusTagHtml = `<div class="live-agenda-tag done-tag">✅ สรุปแล้ว ${m._meta.doneCount}/${m._meta.totalCount} วาระ${m.docUrl ? ' • มี Google Docs' : ''}</div>`;
-            }
-
-            return `
-              <div class="live-item-row ${m._isLive ? '' : 'done-row'}">
-                <div class="live-item-info">
-                  <div class="live-item-title">${safeTitle}</div>
-                  <div class="live-item-meta">📍 ${safeRoom}</div>
-                  ${statusTagHtml}
-                </div>
-                <button class="btn-live-open ${m._isLive ? '' : 'done-btn'}" onclick="openReportViewer('${encodeURIComponent(m.id)}', '${roomArg}')">
-                  <i class="fa-solid ${m._isLive ? 'fa-play' : 'fa-file-lines'}"></i> ${m._isLive ? 'ติดตามสด' : 'ดูสรุป'}
-                </button>
-              </div>`;
-          }).join('');
-
-          container.style.display = 'block';
-          container.innerHTML = `
-            <div class="live-banner-card ${hasAnyLive ? '' : 'today-summary-only'}">
-              <div class="live-banner-header">
-                ${headerPillHtml}
-                <span style="font-size: 11px; color: ${hasAnyLive ? '#991B1B' : '#065F46'}; font-weight: 600;">${subRightText}</span>
-              </div>
-              <div class="live-room-chips">${chipsHtml}</div>
-              <div>${rowsHtml}</div>
-            </div>`;
+          renderLiveBanner(liveItems, todayDoneItems);
         },
-        (err) => console.warn('Live banner listener warning:', err)
+        (err) => {
+          console.warn("Live watcher error:", err);
+        }
       );
+    }
+
+    function renderLiveBanner(liveItems, todayDoneItems) {
+      const container = document.getElementById('liveNowContainer');
+      if (!container) return;
+
+      const combined = [...liveItems, ...todayDoneItems];
+      if (combined.length === 0) {
+        container.style.display = 'block';
+        container.innerHTML = `
+          <div class="live-idle-bar">
+            <span><i class="fa-solid fa-microphone-slash" style="margin-right:6px; color:#94A3B8;"></i>วันนี้ยังไม่มีห้องประชุมที่เปิดบันทึกเสียง AI</span>
+            <span style="font-size:11px; color:#059669; font-weight:700;">● พร้อมเชื่อมต่อ</span>
+          </div>`;
+        return;
+      }
+
+      const hasLive = liveItems.length > 0;
+      const roomChipsHtml = combined.map(item => {
+        const isLive = !!item.activeNode;
+        return `<span class="live-room-chip ${isLive ? '' : 'done-chip'}">
+          <i class="fa-solid ${isLive ? 'fa-tower-broadcast' : 'fa-circle-check'}"></i> ${escapeHtml(item.room)}
+        </span>`;
+      }).join('');
+
+      const rowsHtml = combined.map(item => {
+        const isLive = !!item.activeNode;
+        const statusText = isLive
+          ? (item.activeNode.status === 'processing'
+              ? `⏳ AI กำลังสรุปวาระ ${item.activeNode.code || ''}: ${item.activeNode.title || ''}`
+              : `🎙️ กำลังอัดวาระ ${item.activeNode.code || ''}: ${item.activeNode.title || ''}`)
+          : `✅ สรุปแล้ว ${item.doneCount}/${item.totalCount} วาระ`;
+
+        return `
+          <div class="live-item-row ${isLive ? '' : 'done-row'}">
+            <div class="live-item-info">
+              <div class="live-item-title">${escapeHtml(item.title)}</div>
+              <div class="live-item-meta">📍 ${escapeHtml(item.room)}</div>
+              <div class="live-agenda-tag ${isLive ? '' : 'done-tag'}">${escapeHtml(statusText)}</div>
+            </div>
+            <button class="btn-live-open ${isLive ? '' : 'done-btn'}" onclick="openReportViewer('${encodeURIComponent(item.id)}', '${encodeURIComponent(item.room)}')">
+              ${isLive ? '<i class="fa-solid fa-bolt"></i> ติดตามสด' : '<i class="fa-solid fa-file-lines"></i> ดูสรุป'}
+            </button>
+          </div>`;
+      }).join('');
+
+      const headerTitle = hasLive
+        ? `<span class="live-pill"><span class="live-dot"></span> กำลังประชุมสด ${liveItems.length} ห้อง</span>`
+        : `<span class="live-pill done-pill"><i class="fa-solid fa-wand-magic-sparkles"></i> ประชุมสำคัญที่มีบันทึก AI วันนี้ ${todayDoneItems.length} ห้อง</span>`;
+
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div class="live-banner-card ${hasLive ? '' : 'today-summary-only'}">
+          <div class="live-banner-header">
+            ${headerTitle}
+            <span style="font-size:11px; font-weight:700; color:${hasLive ? '#991B1B' : '#065F46'};">แตะเพื่อติดตามสรุปวาระ</span>
+          </div>
+          <div class="live-room-chips">${roomChipsHtml}</div>
+          ${rowsHtml}
+        </div>`;
     }
 
     function openReportViewer(encodedEventId, encodedRoom) {
       const eventId = decodeURIComponent(encodedEventId || '');
       const room = decodeURIComponent(encodedRoom || '');
       const roomParam = room ? `&room=${encodeURIComponent(room)}` : '';
-      const url = `${RECORDER_APP_URL}?eventId=${encodeURIComponent(eventId)}&mode=view${roomParam}`;
-      window.location.href = url;
+      const nameParam = currentDisplayName ? `&name=${encodeURIComponent(currentDisplayName)}` : '';
+      window.location.href = `${EXECUTIVE_VIEW_URL}?eventId=${encodeURIComponent(eventId)}${roomParam}${nameParam}`;
     }
 
     // -------------------------------------------------------------------------
@@ -1274,41 +1201,48 @@
       liff.init({ liffId: LIFF_ID })
         .then(() => {
           if (!liff.isLoggedIn()) {
-            // หากเปิดผ่านแอป LINE ให้ล็อกอินอัตโนมัติ (ถ้าเปิดบนเบราว์เซอร์ทดสอบไม่ต้องบังคับเด้งออก)
             if (liff.isInClient()) liff.login();
             return;
           }
           liff.getProfile().then(profile => {
             currentUserId = profile.userId;
-            document.getElementById('lineProfileImg').src = profile.pictureUrl || 'https://placehold.co/72x72/06C755/FFFFFF?text=LINE';
-            document.getElementById('lineProfileName').innerText = profile.displayName;
-            document.getElementById('profileContainer').style.display = 'block';
+            currentDisplayName = profile.displayName || '';
+            const imgEl = document.getElementById('lineProfileImg');
+            const nameEl = document.getElementById('lineProfileName');
+            const profBox = document.getElementById('profileContainer');
+            if (imgEl) imgEl.src = profile.pictureUrl || 'https://placehold.co/72x72/06C755/FFFFFF?text=LINE';
+            if (nameEl) nameEl.innerText = profile.displayName;
+            if (profBox) profBox.style.display = 'block';
 
             const bInput = document.getElementById('bookerName');
             if (bInput && !bInput.value) bInput.value = profile.displayName;
-          }).catch(err => console.error("LIFF getProfile Error:", err));
+          }).catch(err => console.warn("LIFF getProfile Error:", err));
         })
-        .catch(err => console.error("LIFF Init Error:", err));
+        .catch(err => console.warn("LIFF Init Error:", err));
     }
 
+    // -------------------------------------------------------------------------
+    // 3. สลับแท็บ / เปลี่ยนวันที่ / โหลดตารางการจอง
+    // -------------------------------------------------------------------------
     function switchTab(tabName, event) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-      if (tabName === 'schedule') document.getElementById('scheduleTab').classList.add('active');
-      else if (tabName === 'timeline') document.getElementById('timelineTab').classList.add('active');
-      else if (tabName === 'calendar') {
-        document.getElementById('calendarTab').classList.add('active');
-        fetchMonthOverview();
-      }
+      const target = document.getElementById(`${tabName}Tab`);
+      if (target) target.classList.add('active');
+      if (tabName === 'calendar') fetchMonthOverview();
       if (event && event.currentTarget) event.currentTarget.classList.add('active');
     }
 
     function onDateInputChange() {
-      const dateVal = document.getElementById('bookingDate').value;
-      document.getElementById('thaiDateLabel').innerText = formatThaiDate(dateVal);
+      const dateInput = document.getElementById('bookingDate');
+      if (!dateInput) return;
+      const dateVal = dateInput.value;
+      const labelEl = document.getElementById('thaiDateLabel');
+      if (labelEl) labelEl.innerText = formatThaiDate(dateVal);
+
       const selected = new Date(dateVal);
-      if (!isNaN(selected)) {
+      if (!isNaN(selected.getTime())) {
         calCurrentDate = selected;
         renderCalendar();
       }
@@ -1321,26 +1255,30 @@
       try {
         const res = await callGasApi('getMonthOverview', { year, month });
         if (res.status === "success") {
-          monthlyCache = res.data;
+          monthlyCache = res.data || {};
           renderCalendar();
         }
       } catch (err) {
-        console.error("เกิดข้อผิดพลาดในการโหลดปฏิทินเดือน:", err);
+        console.warn("โหลดปฏิทินเดือนไม่สำเร็จ:", err);
       }
     }
 
     function renderCalendar() {
+      const calCells = document.getElementById('calCells');
+      const titleEl = document.getElementById('calMonthTitle');
+      if (!calCells || !titleEl) return;
+
       const year = calCurrentDate.getFullYear();
       const month = calCurrentDate.getMonth();
       const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-      document.getElementById('calMonthTitle').innerText = `${monthNames[month]} ${year + 543}`;
+      titleEl.innerText = `${monthNames[month]} ${year + 543}`;
 
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const calCells = document.getElementById('calCells');
       calCells.innerHTML = '';
 
-      const currentSelectedDate = document.getElementById('bookingDate').value;
+      const dateInput = document.getElementById('bookingDate');
+      const currentSelectedDate = dateInput ? dateInput.value : '';
 
       for (let i = 0; i < firstDay; i++) {
         const emptyCell = document.createElement('div');
@@ -1366,15 +1304,16 @@
         if (dayBookings) {
           const dotsBox = document.createElement('div');
           dotsBox.className = 'cal-dots-container';
-          if (dayBookings['room1']) dotsBox.innerHTML += '<span class="cal-room-pill dot-r1">ร1</span>';
-          if (dayBookings['room2']) dotsBox.innerHTML += '<span class="cal-room-pill dot-r2">ร2</span>';
-          if (dayBookings['room3']) dotsBox.innerHTML += '<span class="cal-room-pill dot-r3">ร3</span>';
+          if (dayBookings.room1) { const p = document.createElement('span'); p.className = 'cal-room-pill dot-r1'; p.innerText = 'ร1'; dotsBox.appendChild(p); }
+          if (dayBookings.room2) { const p = document.createElement('span'); p.className = 'cal-room-pill dot-r2'; p.innerText = 'ร2'; dotsBox.appendChild(p); }
+          if (dayBookings.room3) { const p = document.createElement('span'); p.className = 'cal-room-pill dot-r3'; p.innerText = 'ร3'; dotsBox.appendChild(p); }
           cell.appendChild(dotsBox);
         }
 
         cell.onclick = function() {
-          document.getElementById('bookingDate').value = thisDateStr;
-          document.getElementById('thaiDateLabel').innerText = formatThaiDate(thisDateStr);
+          if (dateInput) dateInput.value = thisDateStr;
+          const labelEl = document.getElementById('thaiDateLabel');
+          if (labelEl) labelEl.innerText = formatThaiDate(thisDateStr);
           renderCalendar();
           loadSchedule();
         };
@@ -1389,14 +1328,19 @@
     }
 
     function onRoomChange() {
-      const selected = document.getElementById('roomSelect').value;
-      document.getElementById('roomImg').src = roomData[selected].img;
-      document.getElementById('roomDesc').innerText = roomData[selected].desc;
+      const roomEl = document.getElementById('roomSelect');
+      if (!roomEl) return;
+      const selected = roomEl.value;
+      const imgEl = document.getElementById('roomImg');
+      const descEl = document.getElementById('roomDesc');
+      if (imgEl && roomData[selected]) imgEl.src = roomData[selected].img;
+      if (descEl && roomData[selected]) descEl.innerText = roomData[selected].desc;
       updateAvailableTimeSlots();
     }
 
     async function loadSchedule() {
-      const date = document.getElementById('bookingDate').value;
+      const dateInput = document.getElementById('bookingDate');
+      const date = dateInput ? dateInput.value : '';
       if (!date) return;
 
       ['room1', 'room2', 'room3'].forEach((r, idx) => {
@@ -1410,29 +1354,66 @@
         const result = await callGasApi('getScheduleData', { date });
         if (result.status === "success") {
           currentScheduleData = result.data;
-          currentOffsiteData = result.offsite || [];
-          updateTableUI(result.data, currentOffsiteData);
+          currentOffsiteData = Array.isArray(result.offsite) ? result.offsite : [];
+          updateTableUI(result.data);
+          renderOffsiteList(currentOffsiteData);
           updateAvailableTimeSlots();
         } else {
-          showToast("ดึงข้อมูลไม่สำเร็จ: " + result.message, "error");
+          showToast("ดึงข้อมูลไม่สำเร็จ: " + (result.message || "ไม่ทราบสาเหตุ"), "error");
         }
       } catch (err) {
         showToast("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: " + err.message, "error");
       }
     }
 
+    function renderOffsiteList(list) {
+      const box = document.getElementById('offsiteListBox');
+      const itemsEl = document.getElementById('offsiteListItems');
+      if (!box || !itemsEl) return;
+
+      if (!list || list.length === 0) {
+        box.style.display = 'none';
+        itemsEl.innerHTML = '';
+        return;
+      }
+
+      box.style.display = 'block';
+      itemsEl.innerHTML = list.map((ev, idx) => {
+        const key = `offsite_${idx}`;
+        slotDetailStore[key] = {
+          room: ev.room || 'นอกสถานที่',
+          slot: ev.timeText || '-',
+          title: ev.title || '(ไม่ระบุหัวข้อ)',
+          booker: 'ระบบบันทึกนอกสถานที่',
+          phone: '-',
+          detail: ev.description || '-',
+          eventId: ev.eventId || ''
+        };
+        return `
+          <div class="offsite-item" onclick="showBookingDetail('${key}')">
+            <div style="min-width:0; flex:1;">
+              <div class="offsite-item-title">${escapeHtml(ev.title)}</div>
+              <div class="offsite-item-sub">📍 ${escapeHtml(ev.room)} • 🕒 ${escapeHtml(ev.timeText || '-')}</div>
+            </div>
+            <span class="badge booked">ดูรายละเอียด</span>
+          </div>`;
+      }).join('');
+    }
+
     function updateAvailableTimeSlots() {
       if (!currentScheduleData) return;
-      const selectedRoom = document.getElementById('roomSelect').value;
-      const roomSchedule = currentScheduleData[selectedRoom];
-
+      const roomEl = document.getElementById('roomSelect');
+      const timeSelect = document.getElementById('timeSlot');
       const optMorning = document.getElementById('opt_morning');
       const optAfternoon = document.getElementById('opt_afternoon');
       const optFullday = document.getElementById('opt_fullday');
-      const timeSelect = document.getElementById('timeSlot');
+      if (!roomEl || !timeSelect || !optMorning || !optAfternoon || !optFullday) return;
 
-      const isMorningBooked = (roomSchedule.morning.status === 'booked');
-      const isAfternoonBooked = (roomSchedule.afternoon.status === 'booked');
+      const roomSchedule = currentScheduleData[roomEl.value];
+      if (!roomSchedule) return;
+
+      const isMorningBooked = roomSchedule.morning?.status === 'booked';
+      const isAfternoonBooked = roomSchedule.afternoon?.status === 'booked';
 
       optMorning.disabled = isMorningBooked;
       optMorning.innerText = isMorningBooked ? "ช่วงเช้า (08:30 - 12:00) [ไม่ว่าง]" : "ช่วงเช้า (08:30 - 12:00)";
@@ -1440,7 +1421,7 @@
       optAfternoon.disabled = isAfternoonBooked;
       optAfternoon.innerText = isAfternoonBooked ? "ช่วงบ่าย (13:00 - 16:30) [ไม่ว่าง]" : "ช่วงบ่าย (13:00 - 16:30)";
 
-      optFullday.disabled = (isMorningBooked || isAfternoonBooked);
+      optFullday.disabled = isMorningBooked || isAfternoonBooked;
       optFullday.innerText = (isMorningBooked || isAfternoonBooked) ? "ตลอดวัน (08:30 - 16:30) [ไม่ว่าง]" : "ตลอดวัน (08:30 - 16:30)";
 
       if (timeSelect.selectedOptions[0] && timeSelect.selectedOptions[0].disabled) {
@@ -1450,47 +1431,40 @@
       }
     }
 
-    function parseDescription(desc) {
-      let booker = '-', phone = '-', detail = '-';
-      if (desc && desc !== '-') {
-        desc.split('\n').forEach(line => {
-          if (line.startsWith('ผู้จอง:')) booker = line.replace('ผู้จอง:', '').trim();
-          else if (line.startsWith('เบอร์ภายใน:')) phone = line.replace('เบอร์ภายใน:', '').trim();
-          else if (line.startsWith('รายละเอียดเพิ่มเติม:')) detail = line.replace('รายละเอียดเพิ่มเติม:', '').trim();
-        });
-        if (booker === '-' && detail === '-') detail = desc;
-      }
-      return { booker, phone, detail };
-    }
-
-    function updateTableUI(data, offsiteList) {
+    function updateTableUI(data) {
       const rooms = ['room1', 'room2', 'room3'];
       const roomNames = { room1: 'ห้องประชุม 1', room2: 'ห้องประชุม 2', room3: 'ห้องประชุม 3' };
       const slotNames = { morning: 'ช่วงเช้า (08:30-12:00)', afternoon: 'ช่วงบ่าย (13:00-16:30)', fullday: 'ตลอดวัน (08:30-16:30)' };
-
       slotDetailStore = {};
 
       rooms.forEach((rId, idx) => {
         const rIndex = idx + 1;
         ['morning', 'afternoon', 'fullday'].forEach(slot => {
-          const slotInfo = data[rId][slot];
+          const slotInfo = data[rId]?.[slot] || { status: 'available' };
           const el = document.getElementById(`r${rIndex}_${slot}`);
           const tEl = document.getElementById(`t_r${rIndex}_${slot}`);
 
           let htmlContent = '';
           if (slotInfo.status === 'booked') {
-            const parsed = parseDescription(slotInfo.description);
+            let booker = '-', phone = '-', detail = '-';
+            if (slotInfo.description) {
+              slotInfo.description.split('\n').forEach(line => {
+                if (line.startsWith('ผู้จอง:')) booker = line.replace('ผู้จอง:', '').trim();
+                if (line.startsWith('เบอร์ภายใน:')) phone = line.replace('เบอร์ภายใน:', '').trim();
+                if (line.startsWith('รายละเอียดเพิ่มเติม:')) detail = line.replace('รายละเอียดเพิ่มเติม:', '').trim();
+              });
+            }
             const storeKey = `${rId}_${slot}`;
             slotDetailStore[storeKey] = {
-              eventId: slotInfo.eventId || '',
               room: roomNames[rId],
-              slot: slotInfo.timeText ? `${slotNames[slot]} (${slotInfo.timeText})` : slotNames[slot],
-              title: slotInfo.title || '-',
-              booker: parsed.booker,
-              phone: parsed.phone,
-              detail: parsed.detail
+              slot: slotNames[slot],
+              title: slotInfo.title || '(ไม่ระบุหัวข้อ)',
+              booker: booker,
+              phone: phone,
+              detail: detail,
+              eventId: slotInfo.eventId || ''
             };
-            htmlContent = `<span class="badge booked" onclick="openSlotModal('${storeKey}')">ไม่ว่าง</span>`;
+            htmlContent = `<span class="badge booked" onclick="showBookingDetail('${storeKey}')">ไม่ว่าง</span>`;
           } else {
             htmlContent = `<span class="badge available">ว่าง</span>`;
           }
@@ -1499,138 +1473,100 @@
           if (tEl) tEl.innerHTML = htmlContent;
         });
       });
-
-      // แสดงรายการประชุมนอกสถานที่ (ถ้ามีในวันที่เลือก)
-      const offsiteBox = document.getElementById('offsiteListBox');
-      const offsiteItemsEl = document.getElementById('offsiteListItems');
-      if (offsiteList && offsiteList.length > 0) {
-        offsiteBox.style.display = 'block';
-        offsiteItemsEl.innerHTML = offsiteList.map((ev, idx) => {
-          const storeKey = `offsite_${idx}`;
-          const parsed = parseDescription(ev.description);
-          slotDetailStore[storeKey] = {
-            eventId: ev.eventId || '',
-            room: ev.room || 'นอกสถานที่',
-            slot: ev.timeText || '-',
-            title: ev.title || '-',
-            booker: parsed.booker,
-            phone: parsed.phone,
-            detail: parsed.detail
-          };
-          return `
-            <div class="offsite-item" onclick="openSlotModal('${storeKey}')">
-              <div>
-                <div class="offsite-item-title">${escapeHtml(ev.title)}</div>
-                <div class="offsite-item-sub">📍 ${escapeHtml(ev.room)} • 🕒 ${escapeHtml(ev.timeText)}</div>
-              </div>
-              <span class="badge booked" style="background:#FEF3C7; color:#92400E;">ดูรายงาน</span>
-            </div>`;
-        }).join('');
-      } else {
-        offsiteBox.style.display = 'none';
-        offsiteItemsEl.innerHTML = '';
-      }
     }
 
     // -------------------------------------------------------------------------
-    // 3. เปิด Modal รายละเอียดการจอง + เช็กสถานะรายงาน AI จาก Firestore
+    // 4. Modal รายละเอียดการจอง + ตรวจสอบสถานะรายงาน AI แบบ Real-time
     // -------------------------------------------------------------------------
-    function openSlotModal(storeKey) {
-      const item = slotDetailStore[storeKey];
-      if (!item) return;
+    function showBookingDetail(storeKey) {
+      const info = slotDetailStore[storeKey];
+      if (!info) return;
 
-      document.getElementById('modalRoom').innerText = item.room;
-      document.getElementById('modalSlot').innerText = item.slot;
-      document.getElementById('modalTitle').innerText = item.title;
-      document.getElementById('modalBooker').innerText = item.booker;
-      document.getElementById('modalPhone').innerText = item.phone;
-      document.getElementById('modalDetail').innerText = item.detail;
-      document.getElementById('detailModal').style.display = 'flex';
+      document.getElementById('modalRoom').innerText = info.room;
+      document.getElementById('modalSlot').innerText = info.slot;
+      document.getElementById('modalTitle').innerText = info.title;
+      document.getElementById('modalBooker').innerText = info.booker;
+      document.getElementById('modalPhone').innerText = info.phone;
+      document.getElementById('modalDetail').innerText = info.detail;
 
-      checkModalAiStatus(item);
+      const modal = document.getElementById('detailModal');
+      if (modal) modal.style.display = 'flex';
+
+      const selectedDate = document.getElementById('bookingDate')?.value || '';
+      checkModalAiStatus(info.eventId, info.room, selectedDate);
     }
 
-    function checkModalAiStatus(item) {
-      if (unsubscribeModalStatus) {
-        unsubscribeModalStatus();
-        unsubscribeModalStatus = null;
-      }
-
+    function checkModalAiStatus(eventId, roomName, selectedDate) {
       const box = document.getElementById('modalAiStatusBox');
-      const selectedDate = document.getElementById('bookingDate').value;
-      const isToday = (selectedDate === getTodayDateStr());
+      if (!box) return;
 
-      if (!db || !item.eventId) {
-        box.innerHTML = `<div class="ai-card wait">ยังไม่ได้เชื่อมต่อข้อมูลรายงานการประชุม AI สำหรับรายการนี้</div>`;
+      if (modalStatusUnsubscribe) {
+        modalStatusUnsubscribe();
+        modalStatusUnsubscribe = null;
+      }
+
+      if (!db || !eventId) {
+        box.innerHTML = `<div class="ai-card wait">ยังไม่มีข้อมูลรายงานสรุป AI สำหรับรายการนี้</div>`;
         return;
       }
 
-      box.innerHTML = `<div class="ai-card wait"><i class="fa-solid fa-circle-notch fa-spin"></i> กำลังตรวจสอบสถานะรายงานการประชุม...</div>`;
+      box.innerHTML = `<div class="ai-card wait"><i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบสถานะรายงาน AI...</div>`;
+      const isToday = selectedDate === getLocalDateKey(new Date());
 
-      unsubscribeModalStatus = db.collection('meetings').doc(item.eventId).onSnapshot(
+      modalStatusUnsubscribe = db.collection('meetings').doc(eventId).onSnapshot(
         (doc) => {
           if (doc.exists) {
-            const data = doc.data();
-            const isLive = hasActiveAgenda(data.agendas);
-            const encodedId = encodeURIComponent(item.eventId);
-            const encodedRoom = encodeURIComponent(item.room || '');
+            const data = doc.data() || {};
+            const allNodes = getAllAgendasFlat(data.agendas);
+            const isLive = allNodes.some(a => a.status === 'recording' || a.status === 'processing' || a.status === 'paused');
 
-            if (isLive) {
-              box.innerHTML = `
-                <div class="ai-card live">
-                  <div style="font-weight:700; display:flex; align-items:center; gap:6px;">
-                    <span class="live-dot" style="background:#DC2626;"></span> กำลังบันทึกการประชุมสด (Live)
-                  </div>
-                  <div class="ai-btn-row">
-                    <button class="ai-btn ai-btn-red" onclick="openReportViewer('${encodedId}', '${encodedRoom}')">
-                      <i class="fa-solid fa-mobile-screen"></i> ติดตามสรุปวาระสด
-                    </button>
-                  </div>
-                </div>`;
-            } else {
-              box.innerHTML = `
-                <div class="ai-card done">
-                  <div style="font-weight:700;"><i class="fa-solid fa-circle-check"></i> มีบันทึกและสรุปรายงานการประชุมแล้ว</div>
-                  <div class="ai-btn-row">
-                    <button class="ai-btn ai-btn-green" onclick="openReportViewer('${encodedId}', '${encodedRoom}')">
-                      <i class="fa-solid fa-file-lines"></i> อ่านรายงานสรุป
-                    </button>
-                    ${data.docUrl ? `<a href="${data.docUrl}" target="_blank" class="ai-btn ai-btn-outline"><i class="fa-solid fa-file-word"></i> Docs</a>` : ''}
-                  </div>
-                </div>`;
-            }
+            box.innerHTML = `
+              <div class="ai-card ${isLive ? 'live' : 'done'}">
+                <div style="font-weight:700; display:flex; align-items:center; gap:6px;">
+                  ${isLive
+                    ? '<span class="live-dot" style="background:#DC2626;"></span> กำลังบันทึกการประชุมสด (Live AI)'
+                    : '<i class="fa-solid fa-circle-check"></i> มีบันทึกและสรุปรายงานการประชุมแล้ว'}
+                </div>
+                <div class="ai-btn-row">
+                  <button class="ai-btn ${isLive ? 'ai-btn-red' : 'ai-btn-green'}" onclick="openReportViewer('${encodeURIComponent(eventId)}', '${encodeURIComponent(roomName)}')">
+                    <i class="fa-solid ${isLive ? 'fa-bolt' : 'fa-file-lines'}"></i> ${isLive ? 'ติดตามสรุปวาระสด' : 'อ่านรายงานสรุป'}
+                  </button>
+                  ${data.docUrl ? `<a class="ai-btn ai-btn-outline" href="${data.docUrl}" target="_blank"><i class="fa-solid fa-file-word"></i> Docs</a>` : ''}
+                </div>
+              </div>`;
           } else if (isToday) {
             box.innerHTML = `
               <div class="ai-card wait">
                 <i class="fa-solid fa-hourglass-half" style="margin-bottom:4px;"></i><br>
-                รอผู้บันทึกเริ่มการประชุมผ่านเครื่อง Desktop<br>
-                <span style="font-size:11px;">(ปุ่มดูรายงานสดจะขึ้นที่นี่อัตโนมัติเมื่อเริ่มประชุม)</span>
+                รอเลขาฯ เริ่มบันทึกเสียงผ่านเครื่อง Desktop<br>
+                <span style="font-size:11px;">(ปุ่มติดตามรายงานสดจะปรากฏที่นี่อัตโนมัติ)</span>
               </div>`;
           } else {
-            box.innerHTML = `<div class="ai-card wait">ยังไม่มีรายงานสรุปการประชุมสำหรับรายการนี้</div>`;
+            box.innerHTML = `<div class="ai-card wait">ไม่พบรายงานสรุปการประชุมสำหรับรายการนี้</div>`;
           }
         },
         (err) => {
-          box.innerHTML = `<div class="ai-card wait">ตรวจสอบสถานะรายงานไม่ได้ (${escapeHtml(err.code || err.message)})</div>`;
+          box.innerHTML = `<div class="ai-card wait">ตรวจสอบสถานะ AI ไม่ได้ (${escapeHtml(err.code || err.message)})</div>`;
         }
       );
     }
 
     function closeModal() {
-      if (unsubscribeModalStatus) {
-        unsubscribeModalStatus();
-        unsubscribeModalStatus = null;
+      if (modalStatusUnsubscribe) {
+        modalStatusUnsubscribe();
+        modalStatusUnsubscribe = null;
       }
-      document.getElementById('detailModal').style.display = 'none';
+      const modal = document.getElementById('detailModal');
+      if (modal) modal.style.display = 'none';
     }
 
     window.onclick = function(event) {
       const modal = document.getElementById('detailModal');
-      if (event.target === modal) closeModal();
+      if (modal && event.target === modal) closeModal();
     };
 
     // -------------------------------------------------------------------------
-    // 4. ส่ง Flex Message & บันทึกการจอง
+    // 5. ส่ง Flex Message และบันทึกการจองห้องประชุม
     // -------------------------------------------------------------------------
     function sendBookingFlex(roomName, dateText, slotText, title, booker, phone) {
       if (typeof liff === 'undefined' || !liff.isLoggedIn() || !liff.isInClient()) return;
@@ -1695,7 +1631,7 @@
         }
       };
 
-      liff.sendMessages([flexObj]).catch(err => console.warn("ไม่สามารถส่ง Flex Message:", err.message));
+      liff.sendMessages([flexObj]).catch(err => console.warn("Flex send warning:", err));
     }
 
     async function submitBooking() {
@@ -1723,6 +1659,9 @@
 
       try {
         const res = await callGasApi('saveBooking', { data: payload });
+        btn.disabled = false;
+        btn.innerHTML = `<span>ยืนยันการจองห้องประชุม</span>`;
+
         if (res.status === "success") {
           showToast(res.message || "จองห้องประชุมสำเร็จเรียบร้อย!", "success");
           const roomNames = { room1: 'ห้องประชุม 1', room2: 'ห้องประชุม 2', room3: 'ห้องประชุม 3' };
@@ -1741,13 +1680,12 @@
           document.getElementById('internalPhone').value = '';
           document.getElementById('meetingDetail').value = '';
         } else {
-          showToast(res.message || "ไม่สามารถบันทึกการจองได้", "error");
+          showToast(res.message || "บันทึกการจองไม่สำเร็จ", "error");
         }
       } catch (err) {
-        showToast("เกิดข้อผิดพลาดในการบันทึก: " + err.message, "error");
-      } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>ยืนยันการจองห้องประชุม</span>`;
+        showToast("เกิดข้อผิดพลาดในการบันทึก: " + err.message, "error");
       }
     }
   </script>
